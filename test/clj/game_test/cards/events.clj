@@ -369,6 +369,20 @@
     (is (empty? (:hand (get-runner))) "Played all cards in hand")
     (is (= 7 (:credit (get-corp))) "Corp doesn't lose 1 credit")))
 
+(deftest corporate-grant-hayley
+  ;; Corporate "Grant" - with Hayley Kaplan. Issue #3162.
+  (do-game
+    (new-game (default-corp)
+              (make-deck "Hayley Kaplan: Universal Scholar" [(qty "Corporate \"Grant\"" 1) (qty "Clone Chip" 2)]))
+    (take-credits state :corp)
+    (core/gain state :runner :credit 5)
+    (play-from-hand state :runner "Corporate \"Grant\"")
+    (is (= 8 (:credit (get-corp))) "Corp starts with 8 credits")
+    (play-from-hand state :runner "Clone Chip")
+    (prompt-choice :runner "Yes")
+    (prompt-select :runner (find-card "Clone Chip" (:hand (get-runner))))
+    (is (= 7 (:credit (get-corp))) "Corp only loses 1 credit")))
+
 (deftest corporate-scandal
   ;; Corporate Scandal - Corp has 1 additional bad pub even with 0
   (do-game
@@ -1486,8 +1500,8 @@
 (let [choose-runner (fn [name state prompt-map]
                       (let [kate-choice (some #(when (= name (:title %)) %) (:choices (prompt-map :runner)))]
                         (core/resolve-prompt state :runner {:card kate-choice})))
-
-      ayla "Ayla \"Bios\" Rahim: Simulant Specialist"
+  
+      akiko "Akiko Nisei: Head Case"
       kate "Kate \"Mac\" McCaffrey: Digital Tinker"
       kit "Rielle \"Kit\" Peddler: Transhuman"
       professor "The Professor: Keeper of Knowledge"
@@ -1502,7 +1516,7 @@
       (new-game (default-corp) (default-runner ["Magnum Opus" "Rebirth"]) {:start-as :runner})
 
       (play-from-hand state :runner "Rebirth")
-      (is (= (first (prompt-titles :runner)) ayla) "List is sorted")
+      (is (= (first (prompt-titles :runner)) akiko) "List is sorted")
       (is (every?   #(some #{%} (prompt-titles :runner))
                     [kate kit]))
       (is (not-any? #(some #{%} (prompt-titles :runner))
@@ -1986,8 +2000,8 @@
     (is (= 1 (count (get-in @state [:runner :rig :resource]))) "Kati Jones was installed")
     (play-from-hand state :runner "The Price of Freedom")
     (is (= 0 (count (get-in @state [:runner :hand]))) "The Price of Freedom can be played because a connection is in play")
-    (let [kj (find-card "Kati Jones" (:resource (:rig (get-runner))))]
-      (prompt-choice :runner kj)
+    (let [kj (get-resource state 0)]
+      (prompt-select :runner kj)
       (is (= 0 (count (get-in (get-runner) [:rig :resource]))) "Kati Jones was trashed wth The Price of Freedom")
       (is (= 1 (count (get-in (get-runner) [:discard]))) "The Price of Freedom was removed from game, and only Kati Jones is in the discard"))
     (take-credits state :runner)

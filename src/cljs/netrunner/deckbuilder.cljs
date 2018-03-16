@@ -80,8 +80,10 @@
 (defn parse-identity
   "Parse an id to the corresponding card map"
   [{:keys [side title art setname]}]
-  (let [card (lookup side {:title title})]
-    (assoc card :art art :display-name (build-identity-name title setname art))))
+  (if (nil? title)
+    {:display-name "Missing Identity"}
+    (let [card (lookup side {:title title})]
+      (assoc card :art art :display-name (build-identity-name title setname art)))))
 
 (defn add-params-to-card
   "Add art and id parameters to a card hash"
@@ -406,21 +408,13 @@
   [deck]
   (dots-html influence-dot (decks/influence-map deck)))
 
-
-(defn deck-status-label
-  [sets {:keys [status] :as deck}]
-  (or status
-      (let [valid (decks/valid-deck? deck)
-            mwl (decks/mwl-legal? deck)
-            rotation (decks/only-in-rotation? sets deck)]
-        (decks/deck-status mwl valid rotation))))
-
 (defn- build-deck-status-label [valid mwl rotation cache-refresh onesies onesies-details?]
   (let [status (decks/deck-status mwl valid rotation)
         message (case status
                   "legal" "Tournament legal"
                   "casual" "Casual play only"
-                  "invalid" "Invalid")]
+                  "invalid" "Invalid"
+                  "")]
     [:div.status-tooltip.blue-shade
      [:div {:class (if valid "legal" "invalid")}
       [:span.tick (if valid "✔" "✘")] "Basic deckbuilding rules"]
@@ -433,18 +427,26 @@
      [:div {:class (if (:legal onesies) "legal" "invalid") :title (if onesies-details? (:reason onesies))}
       [:span.tick (if (:legal onesies) "✔" "✘") ] "1.1.1.1 format compliant"]]))
 
+(defn- deck-status-details
+  [deck use-trusted-info]
+  (if use-trusted-info
+    (decks/trusted-deck-status deck)
+    (decks/calculate-deck-status deck)))
+
+(defn format-deck-status-span
+  [deck-status tooltip? onesies-details?]
+  (let [{:keys [valid mwl rotation cache-refresh onesies status]} deck-status
+        message (case status
+                  "legal" "Tournament legal"
+                  "casual" "Casual play only"
+                  "invalid" "Invalid"
+                  "")]
+    [:span.deck-status.shift-tooltip {:class status} message
+     (when tooltip?
+       (build-deck-status-label valid mwl rotation cache-refresh onesies onesies-details?))]))
+
 (defn deck-status-span-impl [sets deck tooltip? onesies-details? use-trusted-info]
-   (let [{:keys [valid mwl rotation cache-refresh onesies status]}
-         (if use-trusted-info
-           (decks/trusted-deck-status deck)
-           (decks/check-deck-status deck))
-         message (case status
-                   "legal" "Tournament legal"
-                   "casual" "Casual play only"
-                   "invalid" "Invalid")]
-     [:span.deck-status.shift-tooltip {:class status} message
-      (when tooltip?
-        (build-deck-status-label valid mwl rotation cache-refresh onesies onesies-details?))]))
+  (format-deck-status-span (deck-status-details deck use-trusted-info) tooltip? onesies-details?))
 
 (def deck-status-span-memoize (memoize deck-status-span-impl))
 
@@ -514,17 +516,24 @@
                       :on-change #(om/set-state! owner :quantity (.. % -target -value))}]
          [:button "Add to deck"]
          (let [query (:query state)
-               matches (match (get-in state [:deck :identity]) query)]
-           (when-not (or (empty? query)
-                         (= (:title (first matches)) query))
-             (om/set-state! owner :matches matches)
-             [:div.typeahead
-              (for [i (range (count matches))]
-                [:div {:class (if (= i (:selected state)) "selected" "")
-                       :on-click (fn [e] (-> ".deckedit .qty" js/$ .select)
-                                         (om/set-state! owner :query (.. e -target -textContent))
-                                         (om/set-state! owner :selected i))}
-                 (:title (nth matches i))])]))]]))))
+               matches (match (get-in state [:deck :identity]) query)
+               exact-match (= (:title (first matches)) query)]
+           (cond
+             exact-match
+             (do
+               (om/set-state! owner :matches matches)
+               (om/set-state! owner :selected 0))
+
+             (not (or (empty? query) exact-match))
+             (do
+               (om/set-state! owner :matches matches)
+               [:div.typeahead
+                (for [i (range (count matches))]
+                  [:div {:class (if (= i (:selected state)) "selected" "")
+                         :on-click (fn [e] (-> ".deckedit .qty" js/$ .select)
+                                     (om/set-state! owner :query (.. e -target -textContent))
+                                     (om/set-state! owner :selected i))}
+                   (:title (nth matches i))])])))]]))))
 
 (defn deck-collection
   [{:keys [sets decks decks-loaded active-deck]} owner]
@@ -561,7 +570,7 @@
 (defn line-span
   "Make the view of a single line in the deck - returns a span"
   [sets {:keys [identity cards] :as deck} {:keys [qty card] :as line}]
-  [:span qty " "
+  [:span qty "  "
    (if-let [name (:title card)]
      (let [infaction (noinfcost? identity card)
            banned (decks/banned? card)
@@ -579,6 +588,32 @@
                 :on-mouse-leave #(put! zoom-channel false)} name]
         (card-influence-html card modqty infaction allied)])
      card)])
+
+ (defn line-qty-span
+  "Make the view of a single line in the deck - returns a span"
+  [sets {:keys [identity cards] :as deck} {:keys [qty card] :as line}]
+  [:span qty "  "])
+ 
+(defn line-name-span
+  "Make the view of a single line in the deck - returns a span"
+  [sets {:keys [identity cards] :as deck} {:keys [qty card] :as line}]
+  [:span (if-let [name (:title card)]
+           (let [infaction (noinfcost? identity card)
+                 banned (decks/banned? card)
+                 allied (decks/alliance-is-free? cards line)
+                 valid (and (decks/allowed? card identity)
+                            (decks/legal-num-copies? identity line))
+                 released (decks/released? sets card)
+                 modqty (if (decks/is-prof-prog? deck card) (- qty 1) qty)]
+             [:span
+              [:span {:class (cond
+                               (and valid released (not banned)) "fake-link"
+                               valid "casual"
+                               :else "invalid")
+                      :on-mouse-enter #(put! zoom-channel line)
+                      :on-mouse-leave #(put! zoom-channel false)} name]
+              (card-influence-html card modqty infaction allied)])
+           card)])
 
 (defn- create-identity
   [state target-value]
@@ -710,14 +745,16 @@
                     [:h4 (str (or (first group) "Unknown") " (" (decks/card-count (last group)) ")") ]
                     (for [line (sort-by #(get-in % [:card :title]) (last group))]
                       [:div.line
-                       (when (:edit state)
+                       (if (:edit state)
                          (let [ch (om/get-state owner :edit-channel)]
                            [:span
+                            [:button.small {:on-click #(put! ch {:qty -1 :card (:card line)})
+                                            :type "button"} "-"]
+                            (line-qty-span sets deck line)
                             [:button.small {:on-click #(put! ch {:qty 1 :card (:card line)})
                                             :type "button"} "+"]
-                            [:button.small {:on-click #(put! ch {:qty -1 :card (:card line)})
-                                            :type "button"} "-"]]))
-                       (line-span sets deck line)])])]]))]
+                            (line-name-span sets deck line)])
+                        (line-span sets deck line))])])]]))]
 
           [:div.deckedit
            [:div

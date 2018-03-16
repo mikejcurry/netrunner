@@ -396,17 +396,19 @@
                  :effect (effect (trash card {:cause :ability-cost}) (lose :tag 1))}]}
 
    "Friday Chip"
-    (let [ability {:msg (msg "move 1 virus counter to " (:title target))
-                   :req (req (pos? (get-in card [:counter :virus] 0)))
-                   :choices {:req #(and (has-subtype? % "Virus")
-                                        (is-type? % "Program"))}
-                   :effect (req (add-counter state :runner card :virus -1)
-                                (add-counter state :runner target :virus 1))}]
+   (let [ability {:msg (msg "move 1 virus counter to " (:title target))
+                  :req (req (and (pos? (get-in card [:counter :virus] 0))
+                                 (pos? (count-virus-programs state))))
+                  :choices {:req #(and (has-subtype? % "Virus")
+                                       (is-type? % "Program"))}
+                  :effect (req (add-counter state :runner card :virus -1)
+                               (add-counter state :runner target :virus 1))}]
      {:events {:runner-turn-begins ability
-               :runner-trash {:optional
+               :runner-trash {:req (req (= (:side target) "Corp"))
+                              :optional
                               {:prompt "Gain a virus counter on Friday Chip?"
                                :yes-ability
-                               {:effect (effect (add-counter card :virus 1)
+                               {:effect (effect (add-counter :runner card :virus 1)
                                                 (system-msg :runner (str "places 1 virus counter on Friday Chip")))}}}}})
 
    "GPI Net Tap"
@@ -778,18 +780,20 @@
     :events {:jack-out {:msg (msg "force the Corp to reveal " (:title (first (shuffle (:hand corp)))) " from HQ")}}}
 
    "Replicator"
-   {:events {:runner-install
-             {:interactive (req (and (is-type? target "Hardware")
-                                     (some #(= (:title %) (:title target)) (:deck runner))))
-              :silent (req (not (and (is-type? target "Hardware")
-                                     (some #(= (:title %) (:title target)) (:deck runner)))))
-              :optional {:prompt "Use Replicator to add a copy?"
-                         :req (req (and (is-type? target "Hardware") (some #(= (:title %) (:title target)) (:deck runner))))
-                         :yes-ability {:msg (msg "add a copy of " (:title target) " to their Grip")
-                                       :effect (effect (trigger-event :searched-stack nil)
-                                                       (shuffle! :deck)
-                                                       (move (some #(when (= (:title %) (:title target)) %)
-                                                                   (:deck runner)) :hand))}}}}}
+   (letfn [(hardware-and-in-deck? [target runner]
+             (and (is-type? target "Hardware")
+                  (some #(= (:title %) (:title target)) (:deck runner))))]
+     {:events {:runner-install
+               {:interactive (req (hardware-and-in-deck? target runner))
+                :silent (req (not (hardware-and-in-deck? target runner)))
+                :optional {:prompt "Use Replicator to add a copy?"
+                           :req (req (hardware-and-in-deck? target runner))
+                           :yes-ability {:msg (msg "add a copy of " (:title target) " to their Grip")
+                                         :effect (effect (trigger-event :searched-stack nil)
+                                                   (shuffle! :deck)
+                                                   (move (some #(when (= (:title %) (:title target)) %)
+                                                               (:deck runner)) :hand))}}}}})
+
 
    "Respirocytes"
    (let [ability {:once :per-turn

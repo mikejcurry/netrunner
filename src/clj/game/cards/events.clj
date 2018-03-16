@@ -206,7 +206,8 @@
                                     c)))})
 
   "Corporate \"Grant\""
-  {:events {:runner-install {:req (req (first-event? state side :runner-install))
+  {:events {:runner-install {:silent (req true) ;; there are no current interactions where we'd want Grant to not be last, and this fixes a bug with Hayley
+                             :req (req (first-event? state side :runner-install))
                              :msg "force the Corp to lose 1 [Credit]"
                              :effect (effect (lose :corp :credit 1))}}}
 
@@ -1046,6 +1047,16 @@
       :effect (req (show-wait-prompt state :corp "Runner to rearrange the top cards of their stack")
                    (let [from (take 6 (:deck runner))]
                      (continue-ability state side (entrance-trash from) card nil)))})
+
+   "Marathon"
+   (run-event
+     {:choices (req (filter #(can-run-server? state %) remotes))}
+     {:end-run {:effect (req (prevent-run-on-server state card (:server run))
+                             (when (:successful run)
+                               (system-msg state :runner "gains 1 [Click] and adds Marathon to their grip")
+                               (gain state :runner :click 1)
+                               (move state :runner (last (:discard runner)) :hand)))}})
+
 
    "Mars for Martians"
    {:msg (msg "draw " (count (filter #(and (has-subtype? % "Clan") (is-type? % "Resource"))

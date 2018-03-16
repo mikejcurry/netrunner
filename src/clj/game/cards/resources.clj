@@ -197,23 +197,24 @@
                                                        bj nil)))}))))}}}
 
    "Bazaar"
-   {:events
-    {:runner-install
-     {:interactive (req (and (is-type? target "Hardware")
-                             (some #(= (:title %) (:title target)) (:hand runner))))
-      :silent (req (not (and (is-type? target "Hardware")
-                             (some #(= (:title %) (:title target)) (:hand runner)))))
-      :delayed-completion true
-      :req (req (and (is-type? target "Hardware") (= [:hand] (:previous-zone target))))
-      :effect (req (let [hw (:title target)]
-                     (continue-ability state side
-                       {:optional {:req (req (some #(when (= (:title %) hw) %) (:hand runner)))
-                                   :prompt (msg "Install another copy of " hw "?")
-                                   :msg (msg "install another copy of " hw)
-                                   :yes-ability {:delayed-completion true
-                                                 :effect (req (if-let [c (some #(when (= (:title %) hw) %)
-                                                                               (:hand runner))]
-                                                                (runner-install state side eid c nil)))}}} card nil)))}}}
+   (letfn [(hardware-and-in-hand? [target runner]
+             (and (is-type? target "Hardware")
+                  (some #(= (:title %) (:title target)) (:hand runner))))]
+     {:events
+      {:runner-install
+       {:interactive (req (hardware-and-in-hand? target runner))
+        :silent (req (not (hardware-and-in-hand? target runner)))
+        :delayed-completion true
+        :req (req (and (is-type? target "Hardware") (= [:hand] (:previous-zone target))))
+        :effect (req (let [hw (:title target)]
+                       (continue-ability state side
+                                         {:optional {:req (req (some #(when (= (:title %) hw) %) (:hand runner)))
+                                                     :prompt (msg "Install another copy of " hw "?")
+                                                     :msg (msg "install another copy of " hw)
+                                                     :yes-ability {:delayed-completion true
+                                                                   :effect (req (if-let [c (some #(when (= (:title %) hw) %)
+                                                                                                 (:hand runner))]
+                                                                                  (runner-install state side eid c nil)))}}} card nil)))}}})
 
    "Beach Party"
    {:in-play [:hand-size-modification 5]
@@ -747,7 +748,8 @@
 
    "Guru Davinder"
    {:events {:pre-damage
-             {:req (req (or (= target :meat) (= target :net)))
+             {:req    (req (and (or (= target :meat) (= target :net))
+                                (pos? (last targets))))
               :msg (msg "prevent all " (if (= target :meat) "meat" "net") " damage")
               :effect (req (damage-prevent state side :meat Integer/MAX_VALUE)
                            (damage-prevent state side :net Integer/MAX_VALUE)
@@ -1102,6 +1104,30 @@
     :events {:agenda-stolen {:msg "trash itself" :effect (effect (trash card))}}
     :abilities [{:cost [:credit 2] :msg "avoid 1 tag" :effect (effect (tag-prevent 1))}]}
 
+   "No One Home"
+   (letfn [(start-trace [type]
+             (let [message (str "avoid any " (if (= type :net) "amount of net damage" "number of tags"))]
+             {:player :corp
+              :label (str "Trace 0 - if unsuccessful, " message)
+              :trace {:base 0
+                      :priority 11
+                      :unsuccessful {:msg message
+                                     :effect (req (if (= type :net)
+                                                    (damage-prevent state side :net Integer/MAX_VALUE)
+                                                    (tag-prevent state side Integer/MAX_VALUE)))}}}))]
+   {:prevent {:tag [:all]
+              :damage [:net]}
+    :abilities [{:msg "force the Corp to trace"
+                 :delayed-completion true
+                 :once :per-turn
+                 :effect (req (let [type (get-in @state [:prevent :current])]
+                                (when-completed (trash state side card {:unpreventable true})
+                                                (continue-ability state side (start-trace type)
+                                                                  card nil))))}]
+    :events {:pre-resolve-damage {:silent (req true)
+                                  :effect (req (swap! state assoc-in [:per-turn (:cid card)] true))}
+             :pre-resolve-tag {:silent (req true)
+                               :effect (req (swap! state assoc-in [:per-turn (:cid card)] true))}}})
    "Off-Campus Apartment"
    {:flags {:runner-install-draw true}
     :abilities [{:label "Install and host a connection on Off-Campus Apartment"

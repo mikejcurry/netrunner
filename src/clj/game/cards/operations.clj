@@ -308,7 +308,7 @@
                            :effect (effect (gain :corp :credit 1))}]
      {:implementation "Credit gain mandatory to save on wait-prompts, adjust credits manually if credit not wanted."
       :events {:runner-install gain-cred-effect
-               :runner-trash gain-cred-effect}})
+               :runner-trash (assoc gain-cred-effect :req (req (installed? target)))}})
 
    "Dedication Ceremony"
    {:prompt "Select a faceup card"
@@ -1522,6 +1522,23 @@
                                                                           (card-str state fr) " to " (card-str state target))))}
                                        tol nil)))}
                      card nil)))}
+
+   "Trojan Horse"
+   {:req (req (:accessed-cards runner-reg))
+    :trace {:base 4
+            :label "Trace 4 - Trash a program"
+            :delayed-completion true
+            :effect (req (let [exceed (- target (second targets))]
+                           (continue-ability
+                             state side
+                             {:delayed-completion true
+                              :prompt (str "Select a program with an install cost of no more than " exceed "[Credits]")
+                              :choices {:req #(and (is-type? % "Program")
+                                                   (installed? %)
+                                                   (>= exceed (:cost %)))}
+                              :msg (msg "trash " (card-str state target))
+                              :effect (effect (trash eid target nil))}
+                             card nil)))}}
 
    "Ultraviolet Clearance"
    {:delayed-completion true
