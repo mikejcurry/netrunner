@@ -2,6 +2,7 @@
   (:require [clojure.string :refer [split split-lines join escape] :as s]
             [jinteki.utils :refer [faction-label INFINITY]]
             [jinteki.cards :refer [all-cards] :as cards]
+            [jinteki.fools :as fools]
             #?@(:clj [[clj-time.core :as t] [clj-time.format :as f]])))
 
 (defn card-count [cards]
@@ -295,9 +296,9 @@
        (released? sets (:identity deck))))
 
 (defn deck-status
-  [mwl-legal valid in-rotation]
+  [mwl-legal valid in-rotation fools]
   (cond
-    (and mwl-legal valid in-rotation) "legal"
+    (and mwl-legal valid in-rotation (pos? (:count fools))) "legal"
     valid "casual"
     :else "invalid"))
 
@@ -307,20 +308,28 @@
         rotation (only-in-rotation? @cards/sets deck)
         onesies (onesies-legal @cards/sets deck)
         cache-refresh (cache-refresh-legal @cards/sets deck)
-        status (deck-status mwl valid rotation)]
+        fools (let [team-cards (fools/team-cards (fools/animal-team deck))
+                    points (map #(contains? team-cards (-> % :card :title)) (:cards deck))
+                    total (reduce + (map #(if (true? %) 1 0) points))]
+                {:count total
+                 :nickname (fools/team-nickname (fools/animal-team deck))})
+        status (deck-status mwl valid rotation fools)]
     {:valid         valid
      :mwl           mwl
      :rotation      rotation
      :status        status
      :onesies       onesies
-     :cache-refresh cache-refresh}))
+     :cache-refresh cache-refresh
+     :fools         fools}))
 
-(defn trusted-deck-status [{:keys [status name cards date] :as deck}]
+
+
+(defn trusted-deck-status [{:keys [username status name cards date] :as deck}]
   (let [parse-date #?(:clj  #(f/parse (f/formatters :date-time) %)
                       :cljs #(js/Date.parse %))
         deck-date (parse-date date)
         mwl-date (:date_start @cards/mwl)]
-    (if (and status
-             (> deck-date mwl-date))
-      status
-      (calculate-deck-status deck))))
+    ;(if (and status
+    ;         (> deck-date mwl-date))
+    ;  (assoc status :fools (fools/deck-status deck))
+      (calculate-deck-status deck)))

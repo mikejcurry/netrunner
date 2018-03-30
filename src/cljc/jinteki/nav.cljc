@@ -7,4 +7,5 @@
    ["Help" "/help" 4 nil]
    ["Settings" "/account" 5 #(:user %)]
    ["Stats" "/stats" 6 #(:user %)]
-   ["About" "/about" 7 nil]])
+   ["About" "/about" 7 nil]
+   ["Leaderboard" "/leaderboard" 8 nil]])

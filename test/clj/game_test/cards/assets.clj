@@ -139,6 +139,30 @@
       (core/rez state :corp eli)
       (is (= 1 (:credit (get-corp))) "Paid only 1c to rez Eli; reduction of 2c"))))
 
+(deftest broadcast-square
+  ;; Broadcast Square - Trace 3: Prevent all bad publicity
+  (do-game
+    (new-game (default-corp [(qty "Profiteering" 1) (qty "Hostile Takeover" 1) (qty "Broadcast Square" 1)])
+              (default-runner))
+    (play-from-hand state :corp "Broadcast Square" "New remote")
+    (core/rez state :corp (get-content state :remote1 0))
+    (is (= 3 (:credit (get-corp))) "Corp should have spent 2 credits: (= 3 (- 5 2))")
+    (play-from-hand state :corp "Profiteering" "New remote")
+    (score-agenda state :corp (get-content state :remote2 0))
+    (prompt-choice :corp "3")  ;; Take 3 bad publicity from Profiteering, gain 15 (if bad publicity actually taken)
+    (prompt-choice :corp 0)  ;; Corp doesn't pump trace, base 3
+    (prompt-choice :runner 0)  ;; Runner doesn't pump trace; loses trace
+    (is (= 1 (:agenda-point (get-corp))) "Corp should score a 1-point agenda")
+    (is (= 0 (:bad-publicity (get-corp))) "Corp should gain 0 bad publicity")
+    (is (= 3 (:credit (get-corp))) "Corp should gain 0 credits: (= 3 (+ 3 0))")
+    (play-from-hand state :corp "Hostile Takeover" "New remote")
+    (score-agenda state :corp (get-content state :remote3 0))
+    (prompt-choice :corp 0)  ;; Corp doesn't pump trace, base 3
+    (prompt-choice :runner 3)  ;; Runner pumps trace; wins trace
+    (is (= 2 (:agenda-point (get-corp))) "Corp should score a 1-point agenda: (= 2 (+ 1 1))")
+    (is (= 1 (:bad-publicity (get-corp))) "Corp should gain 1 bad publicity from failed trace")
+    (is (= 10 (:credit (get-corp))) "Corp should gain 7 credits: (= 10 (+ 3 7))")))
+
 (deftest capital-investors
   ;; Capital Investors - Click for 2 credits
   (do-game
@@ -572,6 +596,72 @@
       (prompt-select :corp (find-card "Oaktown Renovation" (:hand (get-corp))))
       (core/advance state :corp {:card (last (:hosted (refresh fir)))})
       (is (= 11 (:credit (get-corp))) "Gained 1cr from advancing Oaktown"))))
+
+(deftest false-flag
+  (testing "when the corp attempts to score False Flag"
+    (testing "and False Flag has 7 advancements"
+      (do-game
+       (new-game (default-corp [(qty "False Flag" 1)])
+                 (default-runner))
+
+       (play-from-hand state :corp "False Flag" "New remote")
+       (let [ff (get-content state :remote1 0)]
+         (core/add-counter state :corp ff :advancement 7)
+         (core/rez state :corp (refresh ff))
+         (card-ability state :corp (refresh ff) 0)
+
+         (is (nil? (get-content state :remote1 0))
+             "False Flag is no longer in remote")
+         (is (= 3 (:agendapoints (get-in @state [:corp :scored 0])))
+             "the corp can score False Flag")
+         (is (= 1 (:click (get-corp)))
+             "scoring False Flag costs one click"))))
+
+    (testing "and False Flag has less than 7 advancements"
+      (do-game
+       (new-game (default-corp [(qty "False Flag" 1)])
+                 (default-runner))
+
+       (play-from-hand state :corp "False Flag" "New remote")
+       (let [ff (get-content state :remote1 0)]
+         (core/add-counter state :corp ff :advancement 6)
+         (core/rez state :corp (refresh ff))
+         (card-ability state :corp (refresh ff) 0)
+
+         (is (not (nil? (get-content state :remote1 0)))
+             "False Flag remains in the remote")
+         (is (nil? (:agendapoints (get-in @state [:corp :scored 0])))
+             "the corp cannot score false flag")
+         (is (= 2 (:click (get-corp)))
+             "the corp does not lose a click")))))
+
+  (testing "when the runner accesses False Flag"
+    (letfn [(false-flag-tags-test
+              [[advancements expected-tags]]
+              (testing (str "and False Flag has " advancements " advancements")
+                (do-game
+                 (new-game (default-corp [(qty "False Flag" 1)])
+                           (default-runner))
+
+                 (play-from-hand state :corp "False Flag" "New remote")
+                 (core/add-prop state
+                                :corp
+                                (get-content state :remote1 0)
+                                :advance-counter
+                                advancements)
+                 (take-credits state :corp)
+                 (run-empty-server state "Server 1")
+                 (prompt-choice :runner "No")
+
+                 (let [tags (:tag (get-runner))]
+                   (is (= expected-tags tags)
+                       (str "the runner recieves " tags " tags"))))))]
+
+      (doall (map false-flag-tags-test
+                  [[0 0]
+                   [2 1]
+                   [5 2]
+                   [10 5]])))))
 
 (deftest gene-splicer-access-unadvanced-no-trash
   ;; Runner accesses an unadvanced Gene Splicer and doesn't trash

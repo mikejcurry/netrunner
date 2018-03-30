@@ -47,7 +47,7 @@
    (handle-prevent-effect state card)
    (when (and (:memoryunits card) (:installed card) (not (:facedown card)))
      (gain state :runner :memory (:memoryunits card)))
-   (when (and (find-cid (:cid card) (all-installed state side))
+   (when (and (find-cid (:cid card) (all-active-installed state side))
               (not (:disabled card))
               (or (:rezzed card) (:installed card)))
      (when-let [in-play (:in-play (card-def card))]
@@ -299,12 +299,13 @@
       facedown true
       ;; Console check
       (and (has-subtype? card "Console")
-           (some #(has-subtype? % "Console") (all-installed state :runner)))
+           (some #(has-subtype? % "Console") (all-active-installed state :runner)))
       :console
       ;; Installing not locked
       (install-locked? state side) :lock-install
       ;; Uniqueness check
-      (and uniqueness (in-play? state card)) :unique
+      (and uniqueness (some #(= (:title %) (:title card)) (all-active-installed state side)))
+      :unique
       ;; Req check
       (and req (not (req state side (make-eid state) card nil))) :req
       ;; Nothing preventing install
@@ -390,7 +391,13 @@
                                         (card-init state side c {:resolve-effect false
                                                                  :init-data true}))]
                    (runner-install-message state side (:title card) cost-str params)
-                   (play-sfx state side "install-runner")
+
+                   (if (fools/card-team (:title card))
+                     (play-fools-sound state side card :play)
+                     (play-sfx state side "install-runner"))
+
+                   (fools/record-score state side card)
+
                    (when (and (is-type? card "Program") (neg? (get-in @state [:runner :memory])))
                      (toast state :runner "You have run out of memory units!"))
                    (handle-virus-counter-flag state side installed-card)

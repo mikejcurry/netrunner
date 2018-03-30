@@ -249,7 +249,7 @@
                :msg "make the Runner lose 2 tags"}}
 
    "CFC Excavation Contract"
-   {:effect (req (let [bios (count (filter #(and (rezzed? %) (has-subtype? % "Bioroid")) (all-installed state :corp)))
+   {:effect (req (let [bios (count (filter #(has-subtype? % "Bioroid") (all-active-installed state :corp)))
                        bucks (* bios 2)]
                    (gain state side :credit bucks)
                    (system-msg state side (str "gains " bucks " [Credits] from CFC Excavation Contract"))))}
@@ -268,11 +268,19 @@
     :interactive (req true)
     :effect (effect (move-zone :runner :discard :rfg))}
 
+   "City Works Project"
+   (letfn [(meat-damage [s c] (+ 2 (:advance-counter (get-card s c) 0)))]
+     {:install-state :face-up
+      :access {:req (req installed)
+               :msg (msg "do " (meat-damage state card) " meat damage")
+               :delayed-completion true
+               :effect (effect (damage eid :meat (meat-damage state card) {:card card}))}})
+
    "Clone Retirement"
    {:msg "remove 1 bad publicity" :effect (effect (lose :bad-publicity 1))
     :silent (req true)
     :stolen {:msg "force the Corp to take 1 bad publicity"
-             :effect (effect (gain :corp :bad-publicity 1))}}
+             :effect (effect (gain-bad-publicity :corp 1))}}
 
    "Corporate Sales Team"
    (let [e {:effect (req (when (pos? (get-in card [:counter :credit] 0))
@@ -450,7 +458,8 @@
     :abilities [{:cost [:click 1]
                  :counter-cost [:agenda 1]
                  :msg "gain 7 [Credits] and take 1 bad publicity"
-                 :effect (effect (gain :credit 7 :bad-publicity 1))}]}
+                 :effect (effect (gain :credit 7)
+                                 (gain-bad-publicity :corp 1))}]}
 
    "Gila Hands Arcology"
    {:abilities [{:cost [:click 2] :effect (effect (gain :credit 3)) :msg "gain 3 [Credits]"}]}
@@ -519,7 +528,8 @@
 
    "Hostile Takeover"
    {:msg "gain 7 [Credits] and take 1 bad publicity"
-    :effect (effect (gain :credit 7 :bad-publicity 1))
+    :effect (effect (gain :credit 7)
+                    (gain-bad-publicity :corp 1))
     :interactive (req true)}
 
    "Hollywood Renovation"
@@ -554,7 +564,7 @@
                      {:optional
                       {:prompt "Take 1 bad publicity from Illicit Sales?"
                        :yes-ability {:msg "take 1 bad publicity"
-                                     :effect (effect (gain :bad-publicity 1))}
+                                     :effect (effect (gain-bad-publicity :corp 1))}
                        :no-ability {:effect (req (effect-completed state side eid))}}}
                      card nil)
                    (do (let [n (* 3 (+ (get-in @state [:corp :bad-publicity]) (:has-bad-pub corp)))]
@@ -744,7 +754,7 @@
             :msg "trash all connection and job resources"
             :effect (req (doseq [resource (filter #(or (has-subtype? % "Job")
                                                        (has-subtype? % "Connection"))
-                                                  (all-installed state :runner))]
+                                                  (all-active-installed state :runner))]
                                    (trash state side resource)))}}
 
    "Personality Profiles"
@@ -765,7 +775,7 @@
    {:optional {:prompt "Forfeit Posted Bounty to give the Runner 1 tag and take 1 bad publicity?"
                :yes-ability {:msg "give the Runner 1 tag and take 1 bad publicity"
                              :delayed-completion true
-                             :effect (effect (gain :bad-publicity 1)
+                             :effect (effect (gain-bad-publicity :corp eid 1)
                                              (tag-runner :runner eid 1)
                                              (forfeit card))}}}
 
@@ -782,8 +792,10 @@
    {:interactive (req true)
     :choices ["0" "1" "2" "3"] :prompt "How many bad publicity?"
     :msg (msg "take " target " bad publicity and gain " (* 5 (str->int target)) " [Credits]")
-    :effect (final-effect (gain :credit (* 5 (str->int target))
-                                :bad-publicity (str->int target)))}
+    :effect (req (let [bp (:bad-publicity (:corp @state))]
+                   (gain-bad-publicity state :corp eid (str->int target))
+                   (if (< bp (:bad-publicity (:corp @state)))
+                     (gain state :corp :credit (* 5 (str->int target))))))}
 
    "Project Ares"
    (letfn [(trash-count-str [card]
@@ -803,7 +815,7 @@
                                              (:installed %))}
                         :effect (final-effect (trash-cards targets)
                                               (system-msg (str "trashes " (join ", " (map :title targets))))
-                                              (gain :corp :bad-publicity 1))}
+                                              (gain-bad-publicity :corp 1))}
                        card nil)
                       (clear-wait-prompt :corp))})
 
@@ -873,7 +885,8 @@
    "Quantum Predictive Model"
    {:steal-req (req (not tagged))
     :access {:req (req tagged)
-             :effect (effect (as-agenda card 1))
+             :effect (effect (as-agenda card 1)
+                             (play-fools-sound card :install))
              :msg "add it to their score area and gain 1 agenda point"}}
 
    "Rebranding Team"
@@ -1087,23 +1100,15 @@
                                                                  (fn [_ _ c] (not= (:cid c) (:cid card)))))}}}}
 
    "Underway Renovation"
-   {:install-state :face-up
-    :events {:advance {:req (req (= (:cid card) (:cid target))) 
-                       :msg (msg (let [deck (:deck runner)
-                                       anydeck? (pos? (count deck)) 
-                                       adv4? (>= (:advance-counter (get-card state card)) 4)] 
-                         (cond
-                           (and anydeck? adv4?)
-                           (str "trash " (join ", " (map :title (take 2 deck))) " from the Runner's stack")
-
-                           (and anydeck? (not adv4?) )
-                           (str "trash " (:title (first deck)) " from the Runner's stack")
-
-                           (false? anydeck?)  
-                           "trash from the Runner's stack but it is empty")))
-
-                       :effect (effect (mill :runner
-                                             (if (>= (:advance-counter (get-card state card)) 4)  2 1)))}}}
+   (letfn [(adv4? [s c] (if (>= (:advance-counter (get-card s c)) 4) 2 1))]
+     {:install-state :face-up
+      :events {:advance {:req (req (= (:cid card) (:cid target)))
+                         :msg (msg (if (pos? (count (:deck runner)))
+                                     (str "trash "
+                                          (join ", " (map :title (take (adv4? state card) (:deck runner))))
+                                          " from the Runner's stack")
+                                     "trash from the Runner's stack but it is empty"))
+                         :effect (effect (mill :corp :runner (adv4? state card)))}}})
 
    "Unorthodox Predictions"
    {:implementation "Prevention of subroutine breaking is not enforced"
@@ -1140,7 +1145,7 @@
     :msg "do 2 meat damage"
     :effect (effect (damage eid :meat 2 {:card card}))
     :stolen {:msg "force the Corp to take 1 bad publicity"
-             :effect (effect (gain :corp :bad-publicity 1))}}
+             :effect (effect (gain-bad-publicity :corp 1))}}
 
    "Water Monopoly"
    {:events {:pre-install {:req (req (and (is-type? target "Resource")

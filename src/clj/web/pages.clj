@@ -18,7 +18,7 @@
      [:meta {:name "apple-mobile-web-app-capable" :content "yes"}]
      [:title "Jinteki"]
      (hiccup/include-css "/css/carousel.css")
-     (hiccup/include-css "/css/netrunner.css")
+     (hiccup/include-css (str "/css/netrunner.css?v=" version))
      (hiccup/include-css "/lib/toastr/toastr.min.css")
      (hiccup/include-css "/lib/jqueryui/themes/base/jquery-ui.min.css")]
     [:body
@@ -51,6 +51,7 @@
                          "netrunner.account"
                          "netrunner.stats"
                          "netrunner.news"
+                         "netrunner.leaderboard"
                          "dev.figwheel"]]
                 (str "goog.require(\"" req "\");"))])
        (list (hiccup/include-js (str "js/app.js?v=" version))
@@ -100,7 +101,10 @@
         [:div#stats]]
        [:div.item
         [:div.about-bg]
-        [:div#about]]]]
+        [:div#about]]
+       [:div.item
+        [:div.push-your-luck-bg]
+        [:div#leaderboard]]]]
     [:audio#ting
       [:source {:src "/sound/ting.mp3" :type "audio/mp3"}]
      [:source {:src "/sound/ting.ogg" :type "audio/ogg"}]]

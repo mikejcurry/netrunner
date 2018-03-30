@@ -14,7 +14,8 @@
             [jinteki.utils :refer [str->int INFINITY] :as utils]
             [jinteki.cards :refer [all-cards]]
             [jinteki.decks :as decks]
-            [jinteki.cards :as cards]))
+            [jinteki.cards :as cards]
+            [jinteki.fools :as fools]))
 
 (def select-channel (chan))
 (def zoom-channel (chan))
@@ -401,20 +402,24 @@
             banned-span
             [:span
              (when restricted restricted-span)
-             (when rotated rotated-span)]))))
+             (when rotated rotated-span)])
+
+          (when-let [team (fools/card-team (:title card))]
+            [:span {:title (fools/team-name team)} " " (str (fools/team-card-icon team) zws)]))))
 
 (defn deck-influence-html
   "Returns hiccup-ready vector with dots colored appropriately to deck's influence."
   [deck]
   (dots-html influence-dot (decks/influence-map deck)))
 
-(defn- build-deck-status-label [valid mwl rotation cache-refresh onesies onesies-details?]
-  (let [status (decks/deck-status mwl valid rotation)
+(defn- build-deck-status-label [valid mwl rotation cache-refresh onesies onesies-details? fools]
+  (let [status (decks/deck-status mwl valid rotation fools)
         message (case status
                   "legal" "Tournament legal"
                   "casual" "Casual play only"
                   "invalid" "Invalid"
                   "")]
+    (prn fools "!!!!")
     [:div.status-tooltip.blue-shade
      [:div {:class (if valid "legal" "invalid")}
       [:span.tick (if valid "✔" "✘")] "Basic deckbuilding rules"]
@@ -425,7 +430,9 @@
      [:div {:class (if (:legal cache-refresh) "legal" "invalid") :title (if onesies-details? (:reason cache-refresh)) }
       [:span.tick (if (:legal cache-refresh) "✔" "✘")] "Cache Refresh compliant"]
      [:div {:class (if (:legal onesies) "legal" "invalid") :title (if onesies-details? (:reason onesies))}
-      [:span.tick (if (:legal onesies) "✔" "✘") ] "1.1.1.1 format compliant"]]))
+      [:span.tick (if (:legal onesies) "✔" "✘") ] "1.1.1.1 format compliant"]
+     [:div {:class (if (pos? (:count fools)) "legal" "invalid")}
+      [:span.tick (if (pos? (:count fools)) "✔" "✘") ] (str "At least one " (:nickname fools))]]))
 
 (defn- deck-status-details
   [deck use-trusted-info]
@@ -435,7 +442,7 @@
 
 (defn format-deck-status-span
   [deck-status tooltip? onesies-details?]
-  (let [{:keys [valid mwl rotation cache-refresh onesies status]} deck-status
+  (let [{:keys [valid mwl rotation cache-refresh onesies status fools]} deck-status
         message (case status
                   "legal" "Tournament legal"
                   "casual" "Casual play only"
@@ -443,7 +450,7 @@
                   "")]
     [:span.deck-status.shift-tooltip {:class status} message
      (when tooltip?
-       (build-deck-status-label valid mwl rotation cache-refresh onesies onesies-details?))]))
+       (build-deck-status-label valid mwl rotation cache-refresh onesies onesies-details? fools))]))
 
 (defn deck-status-span-impl [sets deck tooltip? onesies-details? use-trusted-info]
   (format-deck-status-span (deck-status-details deck use-trusted-info) tooltip? onesies-details?))

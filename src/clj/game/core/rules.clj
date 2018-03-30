@@ -2,7 +2,7 @@
 
 (declare card-init card-str close-access-prompt enforce-msg gain-agenda-point get-agenda-points installed? is-type?
          in-corp-scored? prevent-draw resolve-steal-events make-result say show-prompt system-msg trash-cards untrashable-while-rezzed?
-         update-all-ice win win-decked play-sfx can-run? untrashable-while-resources?)
+         update-all-ice win win-decked play-sfx can-run? untrashable-while-resources? play-fools-sound)
 
 ;;;; Functions for applying core Netrunner game rules.
 
@@ -300,6 +300,54 @@
          (resolve-tag state side eid n args))))))
 
 
+;;;; Bad Publicity
+(defn bad-publicity-count
+  "Calculates the number of bad publicity to give, taking into account prevention and boosting effects."
+  [state side n {:keys [unpreventable unboostable] :as args}]
+  (-> n
+      (+ (or (when-not unboostable (get-in @state [:bad-publicity :bad-publicity-bonus])) 0))
+      (- (or (when-not unpreventable (get-in @state [:bad-publicity :bad-publicity-prevent])) 0))
+      (max 0)))
+
+(defn bad-publicity-prevent [state side n]
+  (swap! state update-in [:bad-publicity :bad-publicity-prevent] (fnil #(+ % n) 0))
+  (trigger-event state side (if (= side :corp) :corp-prevent :runner-prevent) `(:bad-publicity ~n)))
+
+(defn resolve-bad-publicity [state side eid n args]
+  (trigger-event state side :pre-resolve-bad-publicity n)
+  (if (pos? n)
+    (do (gain state :corp :bad-publicity n)
+        (toast state :corp (str "Took " n " bad publicity!") "info")
+        (trigger-event-sync state side eid :corp-gain-bad-publicity n))
+    (effect-completed state side eid)))
+
+(defn gain-bad-publicity
+  "Attempts to give the runner n bad-publicity, allowing for boosting/prevention effects."
+  ([state side n] (gain-bad-publicity state side (make-eid state) n nil))
+  ([state side eid n] (gain-bad-publicity state side eid n nil))
+  ([state side eid n {:keys [unpreventable card] :as args}]
+   (swap! state update-in [:bad-publicity] dissoc :bad-publicity-bonus :bad-publicity-prevent)
+   (when-completed (trigger-event-sync state side :pre-bad-publicity card)
+     (let [n (bad-publicity-count state side n args)]
+       (let [prevent (get-in @state [:prevent :bad-publicity :all])]
+         (if (and (pos? n) (not unpreventable) (pos? (count prevent)))
+           (do (system-msg state :corp "has the option to avoid bad publicity")
+               (show-wait-prompt state :runner "Corp to prevent bad publicity" {:priority 10})
+               (swap! state assoc-in [:prevent :current] :bad-publicity)
+               (show-prompt
+                 state :corp nil (str "Avoid any of the " n " bad publicity?") ["Done"]
+                 (fn [_]
+                   (let [prevent (get-in @state [:bad-publicity :bad-publicity-prevent])]
+                     (system-msg state :corp
+                                 (if prevent
+                                   (str "avoids " (if (= prevent Integer/MAX_VALUE) "all" prevent) " bad publicity")
+                                   "will not avoid bad publicity"))
+                     (clear-wait-prompt state :runner)
+                     (resolve-bad-publicity state side eid (max 0 (- n (or prevent 0))) args)))
+                 {:priority 10}))
+           (resolve-bad-publicity state side eid n args)))))))
+
+
 ;;; Trashing
 (defn trash-resource-bonus
   "Applies a cost increase of n to trashing a resource with the click action. (SYNC.)"
@@ -328,6 +376,7 @@
 (defn- resolve-trash
   [state side eid {:keys [zone type] :as card}
    {:keys [unpreventable cause keep-server-alive suppress-event] :as args} & targets]
+  (play-fools-sound state side card :trash)
   (if (and (not suppress-event) (not= (last zone) :current)) ; Trashing a current does not trigger a trash event.
     (when-completed (apply trigger-event-sync state side (keyword (str (name side) "-trash")) card cause targets)
                     (apply resolve-trash-end state side eid card args targets))
@@ -347,7 +396,7 @@
 
        (and (= side :corp)
             (untrashable-while-resources? card)
-            (> (count (filter #(is-type? % "Resource") (all-installed state :runner))) 1))
+            (> (count (filter #(is-type? % "Resource") (all-active-installed state :runner))) 1))
        (do (enforce-msg state card "cannot be trashed while there are other resources installed")
            (effect-completed state side eid))
 
@@ -387,10 +436,10 @@
      (trashrec cards))))
 
 (defn- resolve-trash-no-cost
-  [state side card]
-  (trash state side (assoc card :seen true))
-  (swap! state assoc-in [:runner :register :trashed-card] true)
-  (close-access-prompt state side))
+  [state side card & {:keys [seen]
+                      :or {seen true}}]
+  (trash state side (assoc card :seen seen))
+  (swap! state assoc-in [side :register :trashed-card] true))
 
 (defn trash-no-cost
   "Trashes a card at no cost while it is being accessed. (Imp.)"
@@ -403,7 +452,8 @@
       (if (is-type? card "Agenda")
         (when-completed (resolve-steal-events state side card)
                         (resolve-trash-no-cost state side card))
-        (resolve-trash-no-cost state side card)))))
+        (resolve-trash-no-cost state side card))
+      (close-access-prompt state side))))
 
 
 ;;; Agendas
@@ -493,12 +543,13 @@
   (trigger-event state side :purge))
 
 (defn mill
-  "Force the discard of n cards from :deck to :discard."
-  ([state side] (mill state side 1))
-  ([state side n]
-   (let [milltargets (take n (get-in @state [side :deck]))]
-     (doseq [c milltargets]
-       (move state side c :discard)))))
+  "Force the discard of n cards by trashing them."
+  ([state side] (mill state side side 1))
+  ([state side n] (mill state side side n))
+  ([state from-side to-side n]
+   (let [milltargets (take n (get-in @state [to-side :deck]))]
+     (doseq [card milltargets]
+       (resolve-trash-no-cost state from-side card :seen false)))))
 
 ;; Exposing
 (defn expose-prevent

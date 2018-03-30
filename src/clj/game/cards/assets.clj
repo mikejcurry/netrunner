@@ -191,7 +191,7 @@
              :effect (req (let [c (first (get-in @state [:runner :deck]))]
                             (system-msg state :corp (str "uses Breached Dome to do one meat damage and to trash " (:title c)
                                                          " from the top of the Runner's Stack"))
-                            (mill state :runner)
+                            (mill state :corp :runner 1)
                             (damage state side eid :meat 1 {:card card})))}}
 
    "Brain-Taping Warehouse"
@@ -200,10 +200,10 @@
               :effect (effect (rez-cost-bonus (- (:click runner))))}}}
 
    "Broadcast Square"
-   {:implementation "Removes 1 bad publicity rather than prevent it"
-    :abilities [{:label "Trace 3 - Avoid taking a bad publicity"
-                 :trace {:base 3 :msg "avoid taking a bad publicity"
-                         :effect (effect (lose :bad-publicity 1))}}]}
+   {:events {:pre-bad-publicity {:delayed-completion true
+                                 :trace {:base 3
+                                         :msg "prevents all bad publicity"
+                                         :effect (effect (bad-publicity-prevent Integer/MAX_VALUE))}}}}
 
    "Capital Investors"
    {:abilities [{:cost [:click 1] :effect (effect (gain :credit 2)) :msg "gain 2 [Credits]"}]}
@@ -353,7 +353,7 @@
     :derezzed-events {:runner-turn-ends corp-rez-toast}
     ; not-empty doesn't work for the next line, because it does not return literal true; it returns the collection.
     ; flags need exact equality of value to work.
-    :flags {:corp-phase-12 (req (and (pos? (count (filter #(card-is? % :type "Resource") (all-installed state :runner))))
+    :flags {:corp-phase-12 (req (and (pos? (count (filter #(card-is? % :type "Resource") (all-active-installed state :runner))))
                                      (:rezzed card)))}
     :abilities [{:label "Trash a resource"
                  :prompt "Select a resource to trash with Corporate Town"
@@ -457,7 +457,9 @@
     :abilities [{:cost [:click 1] :label "Trash a location"
                  :msg (msg "trash " (:title target) " and take 1 bad publicity")
                  :choices {:req #(has-subtype? % "Location")}
-                 :effect (effect (trash card) (trash target) (gain :bad-publicity 1))}]}
+                 :effect (effect (trash card)
+                                 (trash target)
+                                 (gain-bad-publicity :corp 1))}]}
 
    "Elizas Toybox"
    {:abilities [{:cost [:click 3] :choices {:req #(not (:rezzed %))}
@@ -527,6 +529,21 @@
     :abilities [{:label "Remove 1 bad publicity for each advancement token on Exposé"
                  :msg (msg "remove " (:advance-counter card) " bad publicity")
                  :effect (effect (trash card) (lose :bad-publicity (:advance-counter card)))}]}
+
+   "False Flag"
+   (letfn [(tag-count [false-flag]
+             (int (Math/floor (/ (:advance-counter false-flag 0)
+                                 2))))]
+     {:advanceable :always
+      :access {:req (req (pos? (:advance-counter (get-card state card) 0)))
+               :msg (msg "give the runner " (quantify (tag-count (get-card state card)) "tag"))
+               :delayed-completion true
+               :effect (effect (tag-runner :runner eid (tag-count (get-card state card))))}
+      :abilities [{:cost [:click 1]
+                   :advance-counter-cost 7
+                   :label "Add False Flag to your score area as an agenda worth 3 agenda points"
+                   :msg "add it to their score area as an agenda worth 3 agenda points"
+                   :effect (effect (as-agenda :corp card 3))}]})
 
    "Franchise City"
    {:events {:access {:req (req (is-type? target "Agenda"))
@@ -650,7 +667,7 @@
       :abilities [ability]
       :trash-effect {:req (req (= :servers (first (:previous-zone card)))
                                (= side :runner))
-                     :effect (effect (gain :corp :bad-publicity 1)
+                     :effect (effect (gain-bad-publicity :corp 1)
                                      (system-msg :corp (str "takes 1 bad publicity from Illegal Arms Factory")))}})
 
    "Indian Union Stock Exchange"
@@ -918,7 +935,7 @@
     :events {:corp-turn-begins {:effect (effect (add-prop card :advance-counter 1 {:placed true}))}}
     :abilities [{:cost [:credit 2]
                  :req (req (and (> (get card :advance-counter 0) 0)
-                                (some #(rezzed? %) (all-installed state :corp))))
+                                (not-empty (all-active-installed state :corp))))
                  :label "Move an advancement token to a faceup card"
                  :prompt "Select a faceup card"
                  :choices {:req #(rezzed? %)}
@@ -1209,7 +1226,8 @@
                   :label "Gain credits (start of turn)"
                   :once :per-turn
                   :msg (msg (if tagged "gain 2 [Credits]" "gain 1 [Credits]"))}]
-   {:effect (effect (gain :bad-publicity 1) (system-msg "takes 1 bad publicity"))
+   {:effect (effect (gain-bad-publicity :corp 1)
+                    (system-msg "takes 1 bad publicity"))
     :derezzed-events {:runner-turn-ends corp-rez-toast}
     :events {:corp-turn-begins ability}
     :abilities [ability]})

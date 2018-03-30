@@ -11,7 +11,8 @@
             [clojure.core.match :refer [match]]
             [clojure.stacktrace :refer [print-stack-trace]]
             [jinteki.utils :refer [str->int]]
-            [jinteki.cards :refer [all-cards]]))
+            [jinteki.cards :refer [all-cards]]
+            [jinteki.fools :as fools]))
 
 (load "core/events")    ; triggering of events
 (load "core/cards")     ; retrieving and updating cards

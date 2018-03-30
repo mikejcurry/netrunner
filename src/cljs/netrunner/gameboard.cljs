@@ -12,7 +12,8 @@
             [om.dom :as dom]
             [netrunner.ws :as ws]
             [jinteki.utils :refer [str->int]]
-            [jinteki.cards :refer [all-cards]]))
+            [jinteki.cards :refer [all-cards]]
+            [jinteki.fools :as fools]))
 
 (defonce game-state (atom {}))
 (defonce last-state (atom {}))
@@ -196,7 +197,9 @@
   "Plays a list of sounds one after another."
   [sfx soundbank]
   (when-not (empty? sfx)
+    (prn "play sfx " sfx soundbank)
     (when-let [sfx-key (keyword (first sfx))]
+      (prn "PLAYING" sfx-key)
       (.volume (sfx-key soundbank) (/ (str->int (get-in @app-state [:options :sounds-volume])) 100))
       (.play (sfx-key soundbank)))
     (play-sfx (rest sfx) soundbank)))
@@ -1300,23 +1303,29 @@
                                        (new js/Howl (clj->js {:urls [(str "/sound/" name ".ogg")
                                                                      (str "/sound/" name ".mp3")]}))))]
         {:soundbank
-         (apply hash-map (concat
-                          (audio-sfx "agenda-score")
-                          (audio-sfx "agenda-steal")
-                          (audio-sfx "click-advance")
-                          (audio-sfx "click-card")
-                          (audio-sfx "click-credit")
-                          (audio-sfx "click-run")
-                          (audio-sfx "click-remove-tag")
-                          (audio-sfx "game-end")
-                          (audio-sfx "install-corp")
-                          (audio-sfx "install-runner")
-                          (audio-sfx "play-instant")
-                          (audio-sfx "rez-ice")
-                          (audio-sfx "rez-other")
-                          (audio-sfx "run-successful")
-                          (audio-sfx "run-unsuccessful")
-                          (audio-sfx "virus-purge")))}))
+         (merge
+           (apply hash-map (concat
+                             (audio-sfx "agenda-score")
+                             (audio-sfx "agenda-steal")
+                             (audio-sfx "click-advance")
+                             (audio-sfx "click-card")
+                             (audio-sfx "click-credit")
+                             (audio-sfx "click-run")
+                             (audio-sfx "click-remove-tag")
+                             (audio-sfx "game-end")
+                             (audio-sfx "install-corp")
+                             (audio-sfx "install-runner")
+                             (audio-sfx "play-instant")
+                             (audio-sfx "rez-ice")
+                             (audio-sfx "rez-other")
+                             (audio-sfx "run-successful")
+                             (audio-sfx "run-unsuccessful")
+                             (audio-sfx "virus-purge")))
+           (apply hash-map
+                  (mapcat audio-sfx (apply clojure.set/union
+                                           (mapcat vals (map :sounds (vals fools/animal-teams))))))
+           )
+         }))
 
     om/IWillMount
     (will-mount [this]

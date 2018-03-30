@@ -77,7 +77,8 @@
   "Creates a break subroutine ability.
   If n = 0 then any number of subs are broken."
   ([cost n] (break-sub cost n nil))
-  ([cost n subtype] (break-sub cost n subtype nil))
+  ([cost n subtype] (break-sub cost n subtype (effect (play-fools-sound card :use)
+                                                      (fools/record-score card))))
   ([cost n subtype effect]
    {:msg (str "break "
               (when (> n 1) "up to ")
@@ -94,7 +95,9 @@
   (auto-icebreaker [type]
                    {:data {:counter {:power 4}}
                     :abilities [{:counter-cost [:power 1]
-                                 :msg (str "break up to 2 " (lower-case type) " subroutines")}
+                                 :msg (str "break up to 2 " (lower-case type) " subroutines")
+                                 :effect (effect (play-fools-sound card :use)
+                                                 (fools/record-score card))}
                                 (strength-pump 1 1)]}))
 
 (defn- break-and-enter
@@ -108,7 +111,7 @@
                                            :effect (effect (update-breaker-strength card))}]
                                 {:runner-install cloud :trash cloud :card-moved cloud})
                       :strength-bonus (req (count (filter #(has-subtype? % "Icebreaker")
-                                                          (all-installed state :runner))))}))
+                                                          (all-active-installed state :runner))))}))
 
 (defn- global-sec-breaker
   "GlobalSec breakers for Sunny"
@@ -149,7 +152,7 @@
                                        (rezzed? current-ice)
                                        (has-subtype? current-ice type)
                                        (not (install-locked? state side))
-                                       (not (some #(= title (:title %)) (all-installed state :runner)))
+                                       (not (some #(= title (:title %)) (all-active-installed state :runner)))
                                        (not (get-in @state [:run :register :conspiracy (:cid current-ice)]))))
                         :optional {:player :runner
                                    :prompt (str "Install " title "?")
@@ -246,7 +249,7 @@
     :abilities [(break-sub 1 1)
                 {:label "Add a virus counter"
                  :effect (effect (add-counter card :virus 1))}]
-    :strength-bonus (req (get-in card [:counter :virus] 0))
+    :strength-bonus (req (get-virus-counters state side card))
     :events {:run-ends {:req (req (and (not (or (get-in @state [:run :did-trash])
                                                 (get-in @state [:run :did-steal])))
                                        (get-in @state [:run :did-access])))
@@ -540,6 +543,7 @@
                                   :req (req (and (rezzed? current-ice) (has-subtype? current-ice "Sentry")))
                                   :msg (msg "derez " (:title current-ice) " and return Golden to their Grip")
                                   :effect (effect (derez current-ice)
+                                                  (play-fools-sound state side card "trash")
                                                   (move card :hand))}]})
 
    "Gordian Blade"
@@ -654,7 +658,7 @@
                          :req (req (is-type? target "Program"))
                          :effect (effect (update-breaker-strength card))}]
               {:runner-install maven :trash maven :card-moved maven})
-    :strength-bonus (req (count (filter #(is-type? % "Program") (all-installed state :runner))))}
+    :strength-bonus (req (count (filter #(is-type? % "Program") (all-active-installed state :runner))))}
 
    "Morning Star"
    {:abilities [(break-sub 1 0 "Barrier")]}
@@ -753,6 +757,7 @@
                                   :req (req (and (rezzed? current-ice) (has-subtype? current-ice "Code Gate")))
                                   :msg (msg "derez " (:title current-ice) " and return Peregrine to their Grip")
                                   :effect (effect (derez current-ice)
+                                                  (play-fools-sound state side card "trash")
                                                   (move card :hand))}]})
 
    "Persephone"
@@ -769,8 +774,8 @@
                                                                   :msg (msg (if (pos? target)
                                                                               (str "trash " (:title (first (:deck runner))) " from their Stack and trash " target " cards from R&D")
                                                                               (str "trash " (:title (first (:deck runner))) " from their Stack and nothing from R&D")))
-                                                                  :effect (effect (mill :runner 1)
-                                                                                  (mill :corp target))}}}}})
+                                                                  :effect (effect (mill :runner)
+                                                                                  (mill :runner :corp target))}}}}})
 
    "Pipeline"
    (auto-icebreaker ["Sentry"]
@@ -821,6 +826,7 @@
                                   :req (req (and (rezzed? current-ice) (has-subtype? current-ice "Barrier")))
                                   :msg (msg "derez " (:title current-ice) " and return Saker to their Grip")
                                   :effect (effect (derez current-ice)
+                                                  (play-fools-sound state side card "trash")
                                                   (move card :hand))}]})
 
    "Savant"

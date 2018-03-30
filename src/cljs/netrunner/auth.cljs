@@ -4,7 +4,8 @@
             [sablono.core :as sab :include-macros true]
             [cljs.core.async :refer [chan put!] :as async]
             [netrunner.appstate :refer [app-state]]
-            [netrunner.ajax :refer [POST GET]]))
+            [netrunner.ajax :refer [POST GET]]
+            [jinteki.fools :as fools]))
 
 
 (defn handle-post [event owner url ref]
@@ -28,12 +29,18 @@
   (go (let [response (<! (POST "/logout" nil))]
         (-> js/document .-location (.reload true)))))
 
-(defn avatar [{:keys [emailhash username]} owner opts]
+(defn avatar [{:keys [emailhash username] :as user} owner opts]
   (om/component
    (sab/html
     (when emailhash
       [:img.avatar
-       {:src (str "https://www.gravatar.com/avatar/" emailhash "?d=retro&s=" (:size opts))
+       {:src   (let [team (fools/animal-team user)
+                     leader (first (fools/high-score team))]
+                 (if (= leader username)
+                   (str "img/aprilfools/" (name team) "-leader.gif")
+                  (str "img/aprilfools/" (name team) ".jpg")))
+        :style {:width (str (:size opts) "px")
+                :height (str (:size opts) "px")}
         :alt username}]))))
 
 (defn authenticated [f]
@@ -48,7 +55,7 @@
       [:li.dropdown.usermenu
        [:a.dropdown-toggle {:href "" :data-toggle "dropdown"}
         (om/build avatar user {:key :username :opts {:size 22}})
-        (:username user)
+        (fools/animal-username user)
         [:b.caret]]
        [:div.dropdown-menu.blue-shade.float-right
         [:a.block-link {:href "/account"} "Settings"]
