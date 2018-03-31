@@ -904,6 +904,8 @@
    {:abilities [{:label "[Trash]: Break the first subroutine on the encountered piece of ice"
                  :req (req (and (:run @state) (rezzed? current-ice)))
                  :effect (effect (trash card {:cause :ability-cost})
+                                 (play-fools-sound card :use)
+                                 (fools/score-card-use card)
                                  (system-msg :runner
                                              (str "trashes Kongamato to break the first subroutine on "
                                                   (:title current-ice))))}]}

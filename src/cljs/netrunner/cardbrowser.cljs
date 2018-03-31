@@ -323,6 +323,8 @@
     (om/set-state! owner filter "All"))
   (om/set-state! owner :search-query (.. e -target -value)))
 
+(def animal-ruse-cards #{"Snare!"})
+
 (defn card-browser [{:keys [sets cycles] :as cursor} owner]
   (reify
     om/IInitState
@@ -388,9 +390,9 @@
                                   (update-in % [:name] (fn [name] (str "&nbsp;&nbsp;&nbsp;&nbsp;" name)))
                                   %)
                                sets-filtered)
-               set-names (map :name
+               set-names (concat ["Animals"] (map :name
                               (sort-by (juxt :cycle_position :position)
-                                       (concat cycles-list sets-list)))]
+                                       (concat cycles-list sets-list))))]
            (for [filter [["Set" :set-filter (if (show-alt-art?)
                                               (concat set-names (list "Alt Art"))
                                               set-names)]
@@ -424,6 +426,7 @@
                              cards (cond
                                      (= s "All") @all-cards
                                      (= s "Alt Art") (filter-alt-art-cards @all-cards)
+                                     (= s "Animals") (filter #(contains? animal-ruse-cards (:title %)) @all-cards)
                                      :else
                                      (if (= (.indexOf (:set-filter state) "Cycle") -1)
                                        (filter #(= (:setname %) s) @all-cards)

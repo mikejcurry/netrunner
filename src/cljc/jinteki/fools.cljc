@@ -1,10 +1,9 @@
 (ns jinteki.fools)
 
 (def animal-teams {:dog      {:name      "Team Dog"
-                              :cards     #{"Lycan" "Synth DNA Modification" "Rover Algorithm" "Watchdog" "Lab Dog"
-                                           "Cerberus \"Lady\" H1" "Cerberus \"Rex\" H2" "Cerberus \"Cuj.0\" H3"
-                                           "Pup" "Komainu" "News Hound" "Emergency Shutdown" "HQ Interface" "Data Hound"
-                                           "Grim"}
+                              ;; First row of cards is corp, second is runner
+                              :cards     #{"Lycan" "Synth DNA Modification" "Rover Algorithm" "Watchdog" "Lab Dog" "Pup" "Komainu" "News Hound"  "Data Hound" "Grim"
+                                           "Cerberus \"Lady\" H1" "Cerberus \"Rex\" H2" "Cerberus \"Cuj.0\" H3" "Emergency Shutdown" "HQ Interface"}
                               :card-icon "🐶"
                               :nickname  "bow-wow"
                               :leader    "Good Boy"
@@ -12,8 +11,8 @@
                                           :trash #{"dog-trash1"}
                                           :use   #{"dog-use1"}}}
                    :cat      {:name      "Team Cat"
-                              :cards     #{"BlacKat" "Rumor Mill" "Marathon" "Hellion Alpha Test" "Hellion Beta Test" "Quantum Predictive Model"
-                                           "Chimera" "Quandary" "Conundrum"}
+                              :cards     #{"Hellion Alpha Test" "Hellion Beta Test" "Quantum Predictive Model" "Chimera" "Quandary" "Conundrum"
+                                           "BlacKat" "Rumor Mill" "Marathon" }
                               :card-icon "🐱"
                               :nickname  "kitty meow"
                               :leader    "Mr. Bigglesworth"
@@ -21,7 +20,8 @@
                                           :play  #{"cat-play1"}
                                           :use   #{"cat-use1" "cat-use2"}}}
                    :snake    {:name      "Team Snake"
-                              :cards     #{"Susanoo-no-Mikoto" "Cobra" "Viper" "Mamba" "Caduceus" "Puffer" "Lamprey" "Wormhole" "Wraparound" "Tollbooth" "Uroboros" "Dracō" "Wyrm"}
+                              :cards     #{"Susanoo-no-Mikoto" "Cobra" "Viper" "Mamba" "Caduceus" "Wormhole" "Wraparound" "Tollbooth" "Uroboros" "Dracō"
+                                           "Puffer"  "Wyrm" "Lamprey"}
                               :card-icon "🐍"
                               :nickname  "snek"
                               :leader    "Cobra Commander"
@@ -29,8 +29,8 @@
                                           :trash #{"snake-trash1"}
                                           :use   #{"snake-sure1"}}}
                    :lizard   {:name      "Team Lizard"
-                              :cards     #{"Financial Collapse" "Shattered Remains" "Casting Call" "Chameleon" "Exploratory Romp" "Modded"
-                                           "Maw" "Dinosaurus"}
+                              :cards     #{"Financial Collapse" "Shattered Remains" "Casting Call"
+                                           "Chameleon" "Exploratory Romp" "Modded" "Maw" "Dinosaurus"}
                               :card-icon "🦎"
                               :nickname  "dinorawr"
                               :leader    "GOJIRA!!!!"
@@ -38,7 +38,8 @@
                                           :use   #{"lizard-use1" "lizard-use2" "lizard-use3" "lizard-use4" "lizard-use5"}
                                           :trash #{"lizard-trash1"}}}
                    :turtle   {:name      "Team Turtle"
-                              :cards     #{"Aumakua" "Turtlebacks" "Shell Corporation" "Bullfrog" "Gbahali"}
+                              :cards     #{"Turtlebacks" "Shell Corporation" "Bullfrog"
+                                           "Aumakua" "Gbahali"}
                               :card-icon "🐢"
                               :nickname  "cowabunga"
                               :leader    "TURTLE POWER"
@@ -46,8 +47,8 @@
                                           :use   #{"turtle-use1" "turtle-use2" "turtle-use3" "turtle-use4" "turtle-use5"}
                                           :trash #{"turtle-trash1" "turtle-trash2"}}}
                    :ungulate {:name      "Team Ungulate"
-                              :cards     #{"Celebrity Gift" "Trojan Horse" "Patron" "Green Level Clearance" "Improved Tracers"
-                                           "Taurus" "On the Lam" "Battering Ram" "Wari" "Knight"}
+                              :cards     #{"Celebrity Gift" "Trojan Horse" "Green Level Clearance" "Improved Tracers" "Taurus"  "Sagittarius"
+                                           "Patron" "On the Lam" "Battering Ram" "Wari" "Knight"}
                               :card-icon "🐮"
                               :nickname  "whinnie"
                               :leader    "Li'l Sebastian"
@@ -55,8 +56,8 @@
                                           :trash #{"ungulate-trash1"}
                                           :use   #{"ungulate-use1"}}}
                    :bee      {:name      "Team Bee"
-                              :cards     #{"Plan B" "Honeyfarm" "Chrysalis" "Hive" "Hivemind" "Swarm" "Mutate" "Interrupt 0" "Special Report"
-                                           "Bug"}
+                              :cards     #{"Plan B" "Honeyfarm" "Chrysalis" "Hive" "Swarm" "Mutate" "Interrupt 0" "Special Report"  "Armored Servers"
+                                           "Hivemind" "Bug"}
                               :card-icon "🐝"
                               :nickname  "buzz buzz"
                               :leader    "Bee the Change You Want to See In the World"
@@ -64,9 +65,8 @@
                                           :play  #{"bee-play1" "bee-play2"}
                                           :trash #{"bee-trash1"}}}
                    :bird     {:name      "Team Bird"
-                              :cards     #{"Owl" "Firmware Updates" "Kongamato" "Golden" "Peregrine" "Saker" "Recon Drone" "Origami"
-                                           "GS Shrike M2" "Data Raven" "Peacock" "Egret"
-                                           "Thoth" "Hadrian's Wall" "Early Bird" "Paricia" "The Gauntlet"}
+                              :cards     #{"Owl" "Firmware Updates" "Data Raven" "Thoth" "Hadrian's Wall"
+                                           "Kongamato" "Golden" "Peregrine" "Saker" "Recon Drone" "Origami" "GS Shrike M2" "Peacock" "Egret" "Early Bird" "Paricia" "The Gauntlet"}
                               :card-icon "🐦"
                               :nickname  "birb"
                               :leader    "Wingardium Leviosa"
@@ -75,7 +75,8 @@
                                           :use   #{"bird-use1" "bird-use2" "bird-use3" "bird-use4" "bird-use5"}
                                           :trash #{"bird-trash1" "bird-trash2"}}}
                    :whale    {:name      "Team Whale"
-                              :cards     #{"Howler" "Darwin" "Swordsman" "Red Herrings" "Spear Phishing" "Leviathan"}
+                              :cards     #{"Howler" "Swordsman" "Red Herrings"
+                                           "Darwin" "Spear Phishing" "Leviathan"}
                               :card-icon "🐳"
                               :nickname  "baby beluga"
                               :leader    "Call Me Ishmael"
@@ -89,6 +90,8 @@
                                (replicate (count animal-teams) 0))))
 
 (defonce user-scores (atom {}))
+
+(defonce card-uses (atom {}))
 
 (defn team-cards [team]
   (get-in animal-teams [team :cards]))
@@ -149,14 +152,19 @@
   true) ;; TODO: REMOVE THIS
 
 (defn score-card-use [state side {title :title :as card}]
-  (let [user (get-in @state [side :user])
+  (let [{username :username :as user} (get-in @state [side :user])
         user-animal (animal-team user)
         card-animal (card-team title)
         existing-points (get-in @state [side :fools title] 0)]
-    (when (and (two-player-game? state) (< existing-points 10))
+    (when (and card-animal
+               (two-player-game? state)
+               (< existing-points 10))
       (increment-animal-score card-animal)
+      ;; Record one point for this card during this game.
       (swap! state update-in [side :fools title] (fnil inc 0))
       (when (= user-animal card-animal)
+        ;; Record card usage by this player
+        (swap! card-uses update-in [user-animal username] #(conj (or % #{}) title))
         (increment-user-score user-animal user)))))
 
 (defn score-misc [state side amount]

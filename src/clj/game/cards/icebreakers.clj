@@ -614,7 +614,9 @@
                                                          (can-host? %)
                                                          (not (some (fn [c] (has? c :subtype "Caïssa")) (:hosted %)))))}
                                   :msg (msg "host it on " (card-str state target))
-                                  :effect (effect (host target card))} card nil)))}
+                                  :effect (effect (host target card)
+                                                  (play-fools-sound card :use)
+                                                  (fools/score-card-use card))} card nil)))}
                 {:cost [:credit 2]
                  :req (req (ice? (get-nested-host card)))
                  :msg "break 1 subroutine on the host ICE"}]}

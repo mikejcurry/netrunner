@@ -955,7 +955,8 @@
                                                   run))
                                    :silent (req true)
                                    :delayed-completion true
-                                   :effect (effect (continue-ability
+                                   :effect (effect (fools/score-card-use card)
+                                                   (continue-ability
                                                      {:prompt "How many ICE protecting HQ did you break all subroutines on?"
                                                       ;; Makes number of ice on server (HQ) the upper limit.
                                                       ;; This should work since trashed ice do not count according to UFAQ

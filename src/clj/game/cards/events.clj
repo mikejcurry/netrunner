@@ -1185,13 +1185,17 @@
     :prevent {:tag [:all] :damage [:meat :net :brain]}
     :abilities [{:label "[Trash]: Avoid 3 tags"
                  :msg "avoid up to 3 tags"
-                 :effect (effect (tag-prevent 3) (trash card {:cause :ability-cost}))}
+                 :effect (effect (tag-prevent 3) (trash card {:cause :ability-cost})
+                                 (play-fools-sound card :use)
+                                 (fools/score-card-use card))}
                 {:label "[Trash]: Prevent up to 3 damage"
                  :msg "prevent up to 3 damage"
                  :effect (effect (damage-prevent :net 3)
                                  (damage-prevent :meat 3)
                                  (damage-prevent :brain 3)
-                                 (trash card {:cause :ability-cost}))}]}
+                                 (trash card {:cause :ability-cost})
+                                 (play-fools-sound card :use)
+                                 (fools/score-card-use card))}]}
 
    "Out of the Ashes"
    (let [ashes-run {:prompt "Choose a server"

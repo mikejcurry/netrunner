@@ -1477,7 +1477,9 @@
     :abilities [{:msg "do 1 net damage"
                  :label "Do 1 net damage after AP subroutine broken"
                  :once :per-turn
-                 :effect (effect (damage eid :net 1 {:card card}))}]}
+                 :effect (effect (damage eid :net 1 {:card card})
+                                 (play-fools-sound card :use)
+                                 (fools/score-card-use card))}]}
 
    "Team Sponsorship"
    {:events {:agenda-scored {:label "Install a card from Archives or HQ"

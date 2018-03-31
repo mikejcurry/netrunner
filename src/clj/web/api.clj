@@ -26,8 +26,9 @@
 
 
 (defn fools-get-handler [req]
-  (response 200 {:users (str @fools/user-scores)
-                 :teams (str @fools/animal-scores)}))
+  (response 200 {:users @fools/user-scores
+                 :teams @fools/animal-scores
+                 :uses @fools/card-uses}))
 
 (defn fools-post-handler
   [{{:keys [username points]} :params :as req}]
