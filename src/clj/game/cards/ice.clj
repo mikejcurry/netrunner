@@ -40,8 +40,8 @@
   "Adds 1 power counter to the card."
   {:label "Add 1 power counter"
    :msg "add 1 power counter"
-   :effect (effect (add-counter card :power 1)
-                   (fools/score-card-use card))})
+   :effect (req (add-counter state side card :power 1)
+                   (fools/score-card-use state side card))})
 
 (defn trace-ability
   "Run a trace with specified base strength.

@@ -348,7 +348,9 @@
 
                      (fools/score-card-use state side card)
                      (if (fools/card-team (:title card))
-                       (play-fools-sound state side card :play)
+                       (do (play-fools-sound state side card :play)
+                           (when (ice? card)
+                             (update-ice-strength state side card)))
                        (if (ice? card)
                          (do (update-ice-strength state side card)
                              (play-sfx state side "rez-ice"))

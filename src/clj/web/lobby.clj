@@ -10,7 +10,8 @@
             [monger.collection :as mc]
             [jinteki.cards :refer [all-cards]]
             [jinteki.decks :as decks]
-            [clj-time.core :as t])
+            [clj-time.core :as t]
+            [jinteki.fools :as fools])
   (:import org.bson.types.ObjectId))
 
 ;; All games active on the server.
@@ -195,7 +196,8 @@
   (not (some #(= username (:username %)) (blocked-users game))))
 
 (defn handle-ws-connect [{:keys [client-id] :as msg}]
-  (ws/send! client-id [:games/list (mapv game-public-view (vals @all-games))]))
+  (ws/send! client-id [:games/list (mapv game-public-view (vals @all-games))])
+  (ws/send! client-id (fools/socket-data)))
 
 (defn handle-lobby-create
   [{{{:keys [username emailhash] :as user} :user} :ring-req

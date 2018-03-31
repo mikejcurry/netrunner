@@ -77,8 +77,8 @@
   "Creates a break subroutine ability.
   If n = 0 then any number of subs are broken."
   ([cost n] (break-sub cost n nil))
-  ([cost n subtype] (break-sub cost n subtype (effect (play-fools-sound card :use)
-                                                      (fools/score-card-use card))))
+  ([cost n subtype] (break-sub cost n subtype (req (play-fools-sound state side card :use)
+                                                   (fools/score-card-use state side card))))
   ([cost n subtype effect]
    {:msg (str "break "
               (when (> n 1) "up to ")
@@ -96,8 +96,8 @@
                    {:data {:counter {:power 4}}
                     :abilities [{:counter-cost [:power 1]
                                  :msg (str "break up to 2 " (lower-case type) " subroutines")
-                                 :effect (effect (play-fools-sound card :use)
-                                                 (fools/score-card-use card))}
+                                 :effect (req (play-fools-sound state side card :use)
+                                                 (fools/score-card-use state side card))}
                                 (strength-pump 1 1)]}))
 
 (defn- break-and-enter
@@ -356,8 +356,8 @@
     :effect (effect (update! (assoc card :subtype-target target)))
     :events {:runner-turn-ends {:msg "add itself to Grip" :effect (effect (move card :hand))}}
     :abilities [{:cost [:credit 1] :msg (msg "break 1 " (:subtype-target card) " subroutine")
-                 :effect (effect (play-fools-sound card :use)
-                                 (fools/score-card-use card))}]}
+                 :effect (req (play-fools-sound state side card :use)
+                                 (fools/score-card-use state side card))}]}
 
    "Corroder"
    (auto-icebreaker ["Barrier"]
@@ -545,7 +545,7 @@
                                   :req (req (and (rezzed? current-ice) (has-subtype? current-ice "Sentry")))
                                   :msg (msg "derez " (:title current-ice) " and return Golden to their Grip")
                                   :effect (effect (derez current-ice)
-                                                  (play-fools-sound state side card "trash")
+                                                  (play-fools-sound card "trash")
                                                   (fools/score-card-use card)
                                                   (move card :hand))}]})
 
@@ -760,7 +760,7 @@
                                   :req (req (and (rezzed? current-ice) (has-subtype? current-ice "Code Gate")))
                                   :msg (msg "derez " (:title current-ice) " and return Peregrine to their Grip")
                                   :effect (effect (derez current-ice)
-                                                  (play-fools-sound state side card "trash")
+                                                  (play-fools-sound card "trash")
                                                   (fools/score-card-use card)
                                                   (move card :hand))}]})
 
@@ -830,7 +830,7 @@
                                   :req (req (and (rezzed? current-ice) (has-subtype? current-ice "Barrier")))
                                   :msg (msg "derez " (:title current-ice) " and return Saker to their Grip")
                                   :effect (effect (derez current-ice)
-                                                  (play-fools-sound state side card "trash")
+                                                  (play-fools-sound card "trash")
                                                   (fools/score-card-use card)
                                                   (move card :hand))}]})
 

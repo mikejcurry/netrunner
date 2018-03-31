@@ -7,6 +7,7 @@
             [netrunner.account :refer [alt-art-name]]
             [netrunner.ajax :refer [GET]]
             [jinteki.cards :refer [all-cards] :as cards]
+            [jinteki.fools :as fools]
             [jinteki.decks :as decks]))
 
 (def cards-channel (chan))
@@ -271,9 +272,17 @@
     (filter-cards false :rotated cards)
     cards))
 
+(defn- all-animal-card-titles []
+  (apply clojure.set/union (map :cards (vals fools/animal-teams))))
+
 (defn filter-title [query cards]
-  (if (empty? query)
-    cards
+  (cond
+    (empty? query) cards
+
+    (= "i'm a little teapot" (.toLowerCase query))
+    (filter #(contains? (all-animal-card-titles) (:title %)) cards)
+
+    :else
     (let [lcquery (.toLowerCase query)]
       (filter #(or (not= (.indexOf (.toLowerCase (:title %)) lcquery) -1)
                    (not= (.indexOf (:normalizedtitle %) lcquery) -1))

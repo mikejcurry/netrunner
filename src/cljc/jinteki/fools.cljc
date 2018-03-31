@@ -7,66 +7,81 @@
                                            "Grim"}
                               :card-icon "🐶"
                               :nickname  "bow-wow"
-                              :leader    "Good Boy"}
+                              :leader    "Good Boy"
+                              :sounds    {:play  #{"dog-play1"}
+                                          :trash #{"dog-trash1"}
+                                          :use   #{"dog-use1"}}}
                    :cat      {:name      "Team Cat"
                               :cards     #{"BlacKat" "Rumor Mill" "Marathon" "Hellion Alpha Test" "Hellion Beta Test" "Quantum Predictive Model"
                                            "Chimera" "Quandary" "Conundrum"}
                               :card-icon "🐱"
                               :nickname  "kitty meow"
-                              :leader    "Something something"
-                              :sounds    {:trash #{"cat-trash1"}
-                                          :play #{"cat-play1"}
-                                          }}
+                              :leader    "Mr. Bigglesworth"
+                              :sounds    {:trash #{"cat-trash1" "cat-trash2"}
+                                          :play  #{"cat-play1"}
+                                          :use   #{"cat-use1" "cat-use2"}}}
                    :snake    {:name      "Team Snake"
                               :cards     #{"Susanoo-no-Mikoto" "Cobra" "Viper" "Mamba" "Caduceus" "Puffer" "Lamprey" "Wormhole" "Wraparound" "Tollbooth" "Uroboros" "Dracō" "Wyrm"}
                               :card-icon "🐍"
                               :nickname  "snek"
                               :leader    "Cobra Commander"
-                              :sounds    {:play #{"snake-play1"}}}
+                              :sounds    {:play  #{"snake-play1"}
+                                          :trash #{"snake-trash1"}
+                                          :use   #{"snake-sure1"}}}
                    :lizard   {:name      "Team Lizard"
                               :cards     #{"Financial Collapse" "Shattered Remains" "Casting Call" "Chameleon" "Exploratory Romp" "Modded"
-                                           "Maw" "Dinosaurus"}
+                                           "Maw" "Dinosaurus" "Gbahali"}
                               :card-icon "🦎"
                               :nickname  "dinorawr"
                               :leader    "GOJIRA!!!!"
-                              :sounds    {:play #{"lizard-play1"}}}
+                              :sounds    {:play  #{"lizard-play1" "lizard-play2" "lizard-play3" "lizard-play4" "lizard-play5"}
+                                          :use   #{"lizard-use1" "lizard-use2" "lizard-use3" "lizard-use4" "lizard-use5"}
+                                          :trash #{"lizard-trash1"}}}
                    :turtle   {:name      "Team Turtle"
                               :cards     #{"Aumakua" "Turtlebacks" "Shell Corporation" "Bullfrog" "Gbahali"}
                               :card-icon "🐢"
                               :nickname  "cowabunga"
                               :leader    "TURTLE POWER"
-                              :sounds    {:play  #{"turtle-play1"}
-                                          :use   #{"turtle-use1"}
-                                          :trash #{"turtle-trash"}}}
+                              :sounds    {:play  #{"turtle-play1" "turtle-play2" "turtle-play3" "turtle-play4"}
+                                          :use   #{"turtle-use1" "turtle-use2" "turtle-use3" "turtle-use4" "turtle-use5"}
+                                          :trash #{"turtle-trash1" "turtle-trash2"}}}
                    :ungulate {:name      "Team Ungulate"
                               :cards     #{"Celebrity Gift" "Trojan Horse" "Patron" "Green Level Clearance" "Improved Tracers"
                                            "Taurus" "On the Lam" "Battering Ram" "Wari" "Knight"}
                               :card-icon "🐮"
                               :nickname  "whinnie"
                               :leader    "Li'l Sebastian"
-                              :sounds    {}}
+                              :sounds    {:play  #{"ungulate-play1" "ungulate-play2" "ungulate-play3"}
+                                          :trash #{"ungulate-trash1"}
+                                          :use   #{"ungulate-use1"}}}
                    :bee      {:name      "Team Bee"
                               :cards     #{"Plan B" "Honeyfarm" "Chrysalis" "Hive" "Hivemind" "Swarm" "Mutate" "Interrupt 0" "Special Report"
                                            "Bug"}
                               :card-icon "🐝"
                               :nickname  "buzz buzz"
-                              :leader    "Bee the Change You Want to See In the World"}
+                              :leader    "Bee the Change You Want to See In the World"
+                              :sounds    {:use   #{"bee-use1" "bee-use2"}
+                                          :play  #{"bee-play1" "bee-play2"}
+                                          :trash #{"bee-trash1"}}}
                    :bird     {:name      "Team Bird"
                               :cards     #{"Owl" "Firmware Updates" "Kongamato" "Golden" "Peregrine" "Saker" "Recon Drone" "Origami"
-                                           "GS Shrike M2" "Data Raven" "Peacock" "Egret"}
+                                           "GS Shrike M2" "Data Raven" "Peacock" "Egret"
+                                           "Thoth" "Hadrian's Wall" "Early Bird" "Paricia" "The Gauntlet"}
                               :card-icon "🐦"
                               :nickname  "birb"
                               :leader    "Wingardium Leviosa"
-                              :sounds    {:play  #{"bird-play1" "bird-play2"}
-                                          :use   #{"bird-use1"}
+                              :sounds    {:play  #{"bird-play1" "bird-play2" "bird-play3" "bird-play4" "bird-play5" "bird-play6"
+                                                   "bird-play7" "bird-play8" "bird-play9" "bird-play10"}
+                                          :use   #{"bird-use1" "bird-use2" "bird-use3" "bird-use4" "bird-use5"}
                                           :trash #{"bird-trash1" "bird-trash2"}}}
                    :whale    {:name      "Team Whale"
                               :cards     #{"Howler" "Darwin" "Swordsman" "Red Herrings" "Spear Phishing" "Leviathan"}
                               :card-icon "🐳"
                               :nickname  "baby beluga"
-                              :leader    ""
-                              :sounds    {:trash #{"whale-trash"}
-                                          :play  #{"whale-play1" "whale-play2"}}}})
+                              :leader    "Call Me Ishmael"
+                              :sounds    {:trash #{"whale-trash" "whale-trash2" "whale-trash3"}
+                                          :play  #{"whale-play1" "whale-play2" "whale-play3" "whale-play4" "whale-play5"}
+                                          :use   #{"whale-use1" "whale-use2" "whale-use4"}}}})
 
 
 (defonce animal-scores (atom (zipmap
@@ -115,7 +130,8 @@
 (defn increment-animal-score
   "Takes a team name as a symbol, and increments that team's score by 1."
   ([team] (increment-animal-score team 1))
-  ([team amount] (swap! animal-scores update-in [team] (partial + amount))))
+  ([team amount] (when-not (nil? team)
+                   (swap! animal-scores update-in [team] (partial + amount)))))
 
 (defn increment-user-score
   "Increments the user's core for the given team"

@@ -300,7 +300,7 @@
                  :effect (req (update-breaker-strength state side (host state side card target))
                               (update! state side (assoc (get-card state card) :dino-breaker (:cid target)))
                               (gain state side :memory (:memoryunits target))
-                              (fools/score-card-use card))}]
+                              (fools/score-card-use state side card))}]
     :events {:pre-breaker-strength {:req (req (= (:cid target) (:cid (first (:hosted card)))))
                                     :effect (effect (breaker-strength-bonus 2))}
              :card-moved {:req (req (= (:cid target) (:dino-breaker (get-card state card))))
@@ -491,8 +491,8 @@
                                      card-seen? (= (:cid target) (:cid card-to-trash))
                                      card-to-trash (if card-seen? (assoc card-to-trash :seen true)
                                                                   card-to-trash)]
-                                 (fools/score-card-use card)
-                                 (play-fools-sound card :use)
+                                 (fools/score-card-use state side card)
+                                 (play-fools-sound state side card :use)
                                  (trash state :corp card-to-trash)))}]
      {:in-play [:memory 2]
       :abilities [ability]
