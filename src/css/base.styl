@@ -2026,21 +2026,59 @@ nav ul
       margin-top: 10px
 
 #leaderboard
-  display: block
-  height: 100%
+  position: absolute
+  top: 0
+  left: 0
+  right: 0
+  bottom: 0
   overflow: auto
-  margin-top: -31px
 
   .bar
     height: 14pt
     border: solid black 1px
     background-color: orangered
 
+    .score
+      margin-left: 5px
+
+  .bar.Bee
+    background-color: darkgoldenrod
+
+  .bar.Bird
+    background-color: orchid
+
+  .bar.Cat
+    background-color: black
+
+  .bar.Dog
+    background-color: peru
+
+  .bar.Lizard
+    background-color: slategrey
+
+  .bar.Snake
+    background-color: darkolivegreen
+
+  .bar.Turtle
+    background-color: darkkhaki
+
+  .bar.Ungulate
+    background-color: sienna
+
+  .bar.Whale
+    background-color: lightseagreen
+
+  div.teamname
+    margin-top: 7px
+
   div.team-leader
     clear: both
     margin: 1ex 0
     div.avatar
       float: left
+
+  h3
+    margin-top: 15px
 
 @keyframes highlight
   from

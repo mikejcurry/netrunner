@@ -10,7 +10,8 @@
             [web.game :as game]
             [web.stats :as stats]
             [jinteki.nav :as nav]
-            [clj-time.format :as f])
+            [clj-time.format :as f]
+            [jinteki.fools :as fools])
   (:gen-class :main true))
 
 (defonce server (atom nil))
@@ -49,6 +50,7 @@
     ;; Clear inactive lobbies after 15 minutes
     (web.utils/tick #(lobby/clear-inactive-lobbies 900) 1000)
     (web.utils/tick lobby/send-lobby 1000)
+    (web.utils/tick #(ws/broadcast! :fools/stats (fools/socket-data)) 15000)
 
     (reset! server (org.httpkit.server/run-server app {:port port}))
     (println "Jinteki server running in" @server-mode "mode on port" port)

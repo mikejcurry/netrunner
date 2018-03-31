@@ -56,6 +56,7 @@
     :events {:corp-draw {:optional
                          {:prompt (msg "Pay 2 [Credits] to reveal card just drawn?") :player :runner
                           :yes-ability {:msg (msg "reveal the card just drawn: " (:title (last (:hand corp))))
+                                        :effect (effect (fools/score-card-use card))
                                         :cost [:credit 2]}}}}}
 
    "Cache"
@@ -471,7 +472,8 @@
 
    "Lamprey"
    {:events {:successful-run {:req (req (= target :hq)) :msg "force the Corp to lose 1 [Credits]"
-                              :effect (effect (lose :corp :credit 1))}
+                              :effect (effect (lose :corp :credit 1)
+                                              (fools/score-card-use card))}
              :purge {:effect (effect (trash card))}}}
 
    "Leprechaun"
@@ -961,7 +963,8 @@
               :effect (req (when-completed (expose state side target)
                              (do (if (and async-result
                                           (has-subtype? target chosen-subtype))
-                                   (do (move state :corp target :hand)
+                                   (do (fools/score-card-use state side card)
+                                       (move state :corp target :hand)
                                        (system-msg state :runner
                                                    (str "add " (:title target) " to HQ"))))
                                  (effect-completed state side eid))))})]

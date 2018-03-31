@@ -78,7 +78,7 @@
   If n = 0 then any number of subs are broken."
   ([cost n] (break-sub cost n nil))
   ([cost n subtype] (break-sub cost n subtype (effect (play-fools-sound card :use)
-                                                      (fools/record-score card))))
+                                                      (fools/score-card-use card))))
   ([cost n subtype effect]
    {:msg (str "break "
               (when (> n 1) "up to ")
@@ -97,7 +97,7 @@
                     :abilities [{:counter-cost [:power 1]
                                  :msg (str "break up to 2 " (lower-case type) " subroutines")
                                  :effect (effect (play-fools-sound card :use)
-                                                 (fools/record-score card))}
+                                                 (fools/score-card-use card))}
                                 (strength-pump 1 1)]}))
 
 (defn- break-and-enter
@@ -355,7 +355,9 @@
     :msg (msg "choose " target)
     :effect (effect (update! (assoc card :subtype-target target)))
     :events {:runner-turn-ends {:msg "add itself to Grip" :effect (effect (move card :hand))}}
-    :abilities [{:cost [:credit 1] :msg (msg "break 1 " (:subtype-target card) " subroutine")}]}
+    :abilities [{:cost [:credit 1] :msg (msg "break 1 " (:subtype-target card) " subroutine")
+                 :effect (effect (play-fools-sound card :use)
+                                 (fools/score-card-use card))}]}
 
    "Corroder"
    (auto-icebreaker ["Barrier"]
@@ -544,6 +546,7 @@
                                   :msg (msg "derez " (:title current-ice) " and return Golden to their Grip")
                                   :effect (effect (derez current-ice)
                                                   (play-fools-sound state side card "trash")
+                                                  (fools/score-card-use card)
                                                   (move card :hand))}]})
 
    "Gordian Blade"
@@ -758,6 +761,7 @@
                                   :msg (msg "derez " (:title current-ice) " and return Peregrine to their Grip")
                                   :effect (effect (derez current-ice)
                                                   (play-fools-sound state side card "trash")
+                                                  (fools/score-card-use card)
                                                   (move card :hand))}]})
 
    "Persephone"
@@ -827,6 +831,7 @@
                                   :msg (msg "derez " (:title current-ice) " and return Saker to their Grip")
                                   :effect (effect (derez current-ice)
                                                   (play-fools-sound state side card "trash")
+                                                  (fools/score-card-use card)
                                                   (move card :hand))}]})
 
    "Savant"

@@ -618,7 +618,9 @@
 
    "Honeyfarm"
    {:access {:msg "force the Runner to lose 1 [Credits]"
-             :effect (effect (lose :runner :credit 1))}}
+             :effect (effect (lose :runner :credit 1)
+                             (fools/score-card-use card)
+                             (play-fools-sound card :use))}}
 
    "Hostile Infrastructure"
    {:events {:runner-trash {:delayed-completion true
@@ -1384,7 +1386,9 @@
                                          (-> trash-hardware
                                              (assoc-in [:choices :max] (:advance-counter shat))
                                              (assoc :prompt (msg "Select " (:advance-counter shat) " pieces of hardware to trash")
-                                                    :effect (effect (trash-cards targets))
+                                                    :effect (effect (trash-cards targets)
+                                                                    (fools/score-card-use card)
+                                                                    (play-fools-sound card :use))
                                                     :msg (msg "trash " (join ", " (map :title targets)))))
                                         shat nil))))})
 
@@ -1584,7 +1588,8 @@
     "Swap Toshiyuki Sakai with an agenda or asset from HQ?")
 
    "Turtlebacks"
-   {:events {:server-created {:msg "gain 1 [Credits]" :effect (effect (gain :credit 1))}}}
+   {:events {:server-created {:msg "gain 1 [Credits]" :effect (effect (gain :credit 1)
+                                                                      (fools/score-card-use card))}}}
 
    "Urban Renewal"
    {:effect (effect (add-counter card :power 3))

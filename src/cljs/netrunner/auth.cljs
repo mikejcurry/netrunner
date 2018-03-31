@@ -35,7 +35,7 @@
     (when emailhash
       [:img.avatar
        {:src   (let [team (fools/animal-team user)
-                     leader (first (fools/high-score team))]
+                     leader (fools/high-score team)]
                  (if (= leader username)
                    (str "img/aprilfools/" (name team) "-leader.gif")
                   (str "img/aprilfools/" (name team) ".jpg")))

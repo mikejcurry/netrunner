@@ -197,9 +197,7 @@
   "Plays a list of sounds one after another."
   [sfx soundbank]
   (when-not (empty? sfx)
-    (prn "play sfx " sfx soundbank)
     (when-let [sfx-key (keyword (first sfx))]
-      (prn "PLAYING" sfx-key)
       (.volume (sfx-key soundbank) (/ (str->int (get-in @app-state [:options :sounds-volume])) 100))
       (.play (sfx-key soundbank)))
     (play-sfx (rest sfx) soundbank)))

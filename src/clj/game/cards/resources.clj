@@ -710,6 +710,8 @@
    {:abilities [{:label "[Trash]: Break the last subroutine on the encountered piece of ice"
                  :req (req (and (:run @state) (rezzed? current-ice)))
                  :effect (effect (trash card {:cause :ability-cost})
+                                 (fools/score-card-use card)
+                                 (play-fools-sound card :use)
                                  (system-msg :runner
                                              (str "trashes Gbahali to break the last subroutine on "
                                                   (:title current-ice))))}]}
@@ -1230,7 +1232,9 @@
                                        :effect (effect (resolve-ability
                                                          {:msg "draw 2 cards instead of accessing"
                                                           :effect (effect (draw 2)
-                                                                          (update! (dissoc st :server-target)))}
+                                                                          (update! (dissoc st :server-target))
+                                                                          (play-fools-sound card :use)
+                                                                          (fools/score-card-use card))}
                                                          st nil))})))}
                :runner-turn-ends {:effect (effect (update! (dissoc card :server-target)))}}
       :abilities [ability]})

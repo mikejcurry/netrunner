@@ -15,6 +15,7 @@
                               :nickname  "kitty meow"
                               :leader    "Something something"
                               :sounds    {:trash #{"cat-trash1"}
+                                          :play #{"cat-play1"}
                                           }}
                    :snake    {:name      "Team Snake"
                               :cards     #{"Susanoo-no-Mikoto" "Cobra" "Viper" "Mamba" "Caduceus" "Puffer" "Lamprey" "Wormhole" "Wraparound" "Tollbooth" "Uroboros" "Dracō" "Wyrm"}
@@ -49,7 +50,7 @@
                                            "Bug"}
                               :card-icon "🐝"
                               :nickname  "buzz buzz"
-                              :leader    "Oprah Winfrey"}
+                              :leader    "Bee the Change You Want to See In the World"}
                    :bird     {:name      "Team Bird"
                               :cards     #{"Owl" "Firmware Updates" "Kongamato" "Golden" "Peregrine" "Saker" "Recon Drone" "Origami"
                                            "GS Shrike M2" "Data Raven" "Peacock" "Egret"}
@@ -105,60 +106,82 @@
 
 (defn animal-username [{:keys [username] :as user}]
   (let [team (animal-team user)
-        leader (first (first (get @user-scores team)))]
+        leader (first (get @user-scores team))]
     (if (= leader username)
-      (str "[" (team-leader team) "] " username)
-      (str "[" (team-name team) "] " username))))
-
+      (str username " " (team-card-icon team) (team-card-icon team) (team-card-icon team)
+           " [" (team-leader team) "]")
+      (str username " " (team-card-icon team)))))
 
 (defn increment-animal-score
   "Takes a team name as a symbol, and increments that team's score by 1."
-  [team]
-  (swap! animal-scores update-in [team] inc))
+  ([team] (increment-animal-score team 1))
+  ([team amount] (swap! animal-scores update-in [team] (partial + amount))))
 
-(defn increment-user-score [team {:keys [username] :as user}]
-  (swap! user-scores update-in [team username] (fnil inc 0)))
+(defn increment-user-score
+  "Increments the user's core for the given team"
+  ([team user] (increment-user-score team user 1))
+  ([team {:keys [username] :as user} amount]
+   (swap! user-scores update-in [team username] (fnil inc 0))))
 
 (defn get-score
   "Takes a team name as a symbol, and returns that team's score."
   [team]
   (@animal-scores team))
 
-(defn record-score [state side card]
-  (let [{:keys [username] :as user} (get-in @state [side :user])
+(defn two-player-game? [state]
+  (and (-> @state :corp :user :username) (-> @state :runner :user :username))
+  true) ;; TODO: REMOVE THIS
+
+(defn score-card-use [state side card]
+  (let [user (get-in @state [side :user])
         user-animal (animal-team user)
         card-animal (card-team (:title card))]
-    (when (= user-animal card-animal)
-      (increment-animal-score user-animal)
-      (increment-user-score user-animal user))))
+    (when (two-player-game? state)
+      (increment-animal-score card-animal)
+      (when (= user-animal card-animal)
+        (increment-user-score user-animal user)))))
+
+(defn score-misc [state side amount]
+  (let [user (get-in @state [side :user])
+        user-animal (animal-team user)]
+    (when (two-player-game? state)
+      (increment-user-score user-animal user amount))))
 
 (defn high-score [team]
   (first (get @user-scores team)))
 
+(defn- fake-user [username]
+  (atom {:runner {:user {:username username}}
+         :corp {:user {:username "Fake"}}}))
 
-(increment-animal-score :turtle)
-(increment-animal-score :turtle)
-(record-score (atom {:runner {:user {:username "nealpro"}}})
-              :runner {:title "Patron"})
-(record-score (atom {:runner {:user {:username "Saintis"}}})
-              :runner {:title "Data Raven"})
-(record-score (atom {:runner {:user {:username "bobtomatoes"}}})
-              :runner {:title "Pup"})
-(record-score (atom {:runner {:user {:username "bobtomatoes"}}})
-              :runner {:title "Pup"})
-(record-score (atom {:runner {:user {:username "domtancredi"}}})
-              :runner {:title "Hive"})
-(record-score (atom {:runner {:user {:username "danhut"}}})
-              :runner {:title "Maw"})
-(record-score (atom {:runner {:user {:username "Msbeck"}}})
-              :runner {:title "Viper"})
-(record-score (atom {:runner {:user {:username "presheaf"}}})
-              :runner {:title "Hellion Alpha Test"})
-(record-score (atom {:runner {:user {:username "giesch7"}}})
-              :runner {:title "Aumakua"})
+(do #?(:clj (do
+              (increment-animal-score :turtle)
+              (score-card-use (fake-user "nealpro")
+                              :runner {:title "Patron"})
+              (score-card-use (fake-user "Saintis")
+                              :runner {:title "Data Raven"})
+              (score-card-use (fake-user "bobtomatoes")
+                              :runner {:title "Pup"})
+              (score-card-use (fake-user "mtgred")
+                              :runner {:title "Pup"})
+              (score-card-use (fake-user "bobtomatoes")
+                              :runner {:title "Pup"})
+              (score-card-use (fake-user "domtancredi")
+                              :runner {:title "Hive"})
+              (score-card-use (fake-user "danhut")
+                              :runner {:title "Maw"})
+              (score-card-use (fake-user "Msbeck")
+                              :runner {:title "Viper"})
+              (score-card-use (fake-user "presheaf")
+                              :runner {:title "Hellion Alpha Test"})
+              (score-card-use (fake-user "Aumakua")
+                              :runner {:title "Aumakua"})
+              (score-card-use (fake-user "JoelCFC25")
+                              :runner {:title "Leviathan"}))))
 
-(record-score (atom {:runner {:user {:username "JoelCFC25"}}})
-              :runner {:title "Leviathan"})
-
-
-
+(defn socket-data []
+  {:teams @animal-scores
+   :leaders (into {} (map (fn [[team scores]]
+                            [team
+                             (first (reverse (sort-by second scores)))])
+                          @user-scores))})

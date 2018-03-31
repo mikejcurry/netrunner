@@ -396,7 +396,7 @@
                      (play-fools-sound state side card :play)
                      (play-sfx state side "install-runner"))
 
-                   (fools/record-score state side card)
+                   (fools/score-card-use state side card)
 
                    (when (and (is-type? card "Program") (neg? (get-in @state [:runner :memory])))
                      (toast state :runner "You have run out of memory units!"))

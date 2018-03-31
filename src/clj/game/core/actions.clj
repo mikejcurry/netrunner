@@ -256,7 +256,7 @@
                (apply can-pay? state side (:title card) cost))
        (when-let [activatemsg (:activatemsg sub)] (system-msg state side activatemsg))
        (play-fools-sound state side card :use)
-       (fools/record-score state side card)
+       (fools/score-card-use state side card)
        (resolve-ability state side eid sub card targets)))))
 
 ;;; Corp actions
@@ -346,7 +346,7 @@
                         Please rez prior to clicking Start Turn in the future." "warning"
                               {:time-out 0 :close-button true}))
 
-                     (fools/record-score state side card)
+                     (fools/score-card-use state side card)
                      (if (fools/card-team (:title card))
                        (play-fools-sound state side card :play)
                        (if (ice? card)
@@ -419,7 +419,7 @@
                                                  (swap! state update-in [:corp :register :scored-agenda] #(+ (or % 0) points))
                                                  (swap! state dissoc-in [:corp :disable-id])
                                                  (gain-agenda-point state :corp points)
-                                                 (fools/record-score state side card)
+                                                 (fools/score-card-use state side card)
                                                  (if (fools/card-team (:title card))
                                                    (play-fools-sound state side card :play)
                                                    (play-sfx state side "agenda-score"))))}}

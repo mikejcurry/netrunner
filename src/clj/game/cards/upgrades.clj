@@ -673,7 +673,8 @@
    "Red Herrings"
    (let [ab {:req (req (or (in-same-server? card target)
                            (from-same-server? card target)))
-             :effect (effect (steal-cost-bonus [:credit 5]))}]
+             :effect (effect (steal-cost-bonus [:credit 5])
+                             (fools/score-card-use card))}]
      {:trash-effect
       {:req (req (and (= :servers (first (:previous-zone card))) (:run @state)))
        :effect (effect (register-events {:pre-steal-cost (assoc ab :req (req (or (= (:zone target) (:previous-zone card))
@@ -745,12 +746,14 @@
    {:abilities
     [{:cost [:click 1]
       :msg "store 3 [Credits]" :once :per-turn
-      :effect (effect (add-counter card :credit 3))}
+      :effect (effect (add-counter card :credit 3)
+                      (fools/score-card-use card))}
      {:cost [:click 1]
       :msg (msg "gain " (get-in card [:counter :credit] 0) " [Credits]") :once :per-turn
       :label "Take all credits"
       :effect (effect (gain :credit (get-in card [:counter :credit] 0))
-                      (set-prop card :counter {:credit 0}))}]}
+                      (set-prop card :counter {:credit 0})
+                      (fools/score-card-use card))}]}
 
    "Signal Jamming"
    {:abilities [{:label "[Trash]: Cards cannot be installed until the end of the run"

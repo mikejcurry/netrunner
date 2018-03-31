@@ -444,7 +444,9 @@
                  :req (req (< 0 (get-in card [:counter :agenda] 0)))
                  :msg (msg "place 1 advancement token on " (card-str state target))
                  :once :per-turn
-                 :effect (final-effect (add-prop target :advance-counter 1))}]}
+                 :effect (final-effect (add-prop target :advance-counter 1)
+                                       (play-fools-sound card :use)
+                                       (fools/score-card-use card))}]}
 
    "Genetic Resequencing"
    {:choices {:req #(= (last (:zone %)) :scored)}

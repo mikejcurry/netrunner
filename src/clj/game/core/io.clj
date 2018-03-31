@@ -76,8 +76,6 @@
 (defn play-fools-sound
   "Play a random sound associated with the given card of the sound category type, if any."
   [state side {:keys [title] :as card} sound-type]
-  (prn "play" sound-type "for" title (fools/card-team title))
-  (prn (get-in fools/animal-teams [(fools/card-team title) :sounds sound-type]))
   (when-let [options (get-in fools/animal-teams [(fools/card-team title) :sounds sound-type])]
     (let [s (first (shuffle options))]
       (play-sfx state nil s))))

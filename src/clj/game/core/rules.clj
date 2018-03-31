@@ -49,7 +49,13 @@
                                            (build-spend-msg cost-str "play"))
                                          title
                                          (when ignore-cost " at no cost")))
-             (play-sfx state side "play-instant")
+
+             (if (fools/card-team (:title card))
+               (play-fools-sound state side card :play)
+               (play-sfx state side "play-instant"))
+
+             (fools/score-card-use state side card)
+
              (if (has-subtype? c "Current")
                (do (doseq [s [:corp :runner]]
                      (when-let [current (first (get-in @state [s :current]))] ; trash old current
@@ -614,6 +620,11 @@
   (when-not (:winner @state)
     (system-msg state side "wins the game")
     (play-sfx state side "game-end")
+    (fools/score-misc state side (count (filter fools/card-team (map :title (concat (all-installed state side)
+                                                                                    (get-in @state [side :hand])
+                                                                                    (get-in @state [side :discard])
+                                                                                    (get-in @state [side :deck])
+                                                                                    (get-in @state [side :rfg]))))))
     (swap! state assoc
            :winner side
            :loser (other-side side)
