@@ -77,7 +77,7 @@
        [:div.item.active
         [:div.home-bg]
         [:div.container
-         [:h1 "Play Android: Netrunner in your browser"]
+         [:h1 "Play April: Foolsrunner in your browser"]
          [:div#news]
          [:div#chat]]]
        [:div.item

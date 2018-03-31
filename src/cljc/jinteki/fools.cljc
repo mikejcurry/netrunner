@@ -30,7 +30,7 @@
                                           :use   #{"snake-sure1"}}}
                    :lizard   {:name      "Team Lizard"
                               :cards     #{"Financial Collapse" "Shattered Remains" "Casting Call" "Chameleon" "Exploratory Romp" "Modded"
-                                           "Maw" "Dinosaurus" "Gbahali"}
+                                           "Maw" "Dinosaurus"}
                               :card-icon "🦎"
                               :nickname  "dinorawr"
                               :leader    "GOJIRA!!!!"
@@ -148,12 +148,14 @@
   (and (-> @state :corp :user :username) (-> @state :runner :user :username))
   true) ;; TODO: REMOVE THIS
 
-(defn score-card-use [state side card]
+(defn score-card-use [state side {title :title :as card}]
   (let [user (get-in @state [side :user])
         user-animal (animal-team user)
-        card-animal (card-team (:title card))]
-    (when (two-player-game? state)
+        card-animal (card-team title)
+        existing-points (get-in @state [side :fools title] 0)]
+    (when (and (two-player-game? state) (< existing-points 10))
       (increment-animal-score card-animal)
+      (swap! state update-in [side :fools title] (fnil inc 0))
       (when (= user-animal card-animal)
         (increment-user-score user-animal user)))))
 

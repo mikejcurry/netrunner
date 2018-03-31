@@ -19,9 +19,21 @@
             [ring.middleware.stacktrace :refer [wrap-stacktrace]]
             [web.db :refer [db]]
             [cheshire.generate :refer [add-encoder encode-str]]
-            [compojure.core :refer [defroutes wrap-routes GET POST DELETE PUT]]            ))
+            [compojure.core :refer [defroutes wrap-routes GET POST DELETE PUT]]
+            [jinteki.fools :as fools]))
 
 (add-encoder org.bson.types.ObjectId encode-str)
+
+
+(defn fools-get-handler [req]
+  (response 200 {:users (str @fools/user-scores)
+                 :teams (str @fools/animal-scores)}))
+
+(defn fools-post-handler
+  [{{:keys [username points]} :params :as req}]
+  (let [p (Integer/parseInt points)
+        team (fools/animal-team {:username username})]
+    (swap! fools/user-scores assoc-in [team username] p)))
 
 (defroutes public-routes
            (route/resources "/")
@@ -54,7 +66,9 @@
            (GET "/admin/announce" [] pages/announce-page)
            (POST "/admin/announce" [] admin/announcement-handler)
            (GET "/admin/version" [] pages/version-page)
-           (POST "/admin/version" [] admin/version-handler))
+           (POST "/admin/version" [] admin/version-handler)
+           (GET "/admin/fools" [] fools-get-handler)
+           (GET "/admin/fools/set" [] fools-post-handler))
 
 (defroutes user-routes
            (POST "/logout" [] auth/logout-handler)

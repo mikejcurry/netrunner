@@ -197,7 +197,7 @@
 
 (defn handle-ws-connect [{:keys [client-id] :as msg}]
   (ws/send! client-id [:games/list (mapv game-public-view (vals @all-games))])
-  (ws/send! client-id (fools/socket-data)))
+  (ws/send! client-id [:fools/stats (fools/socket-data)]))
 
 (defn handle-lobby-create
   [{{{:keys [username emailhash] :as user} :user} :ring-req
