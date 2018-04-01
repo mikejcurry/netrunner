@@ -36,6 +36,10 @@
         team (fools/animal-team {:username username})]
     (swap! fools/user-scores assoc-in [team username] p)))
 
+(defn fools-my-score
+  [{user :user :as req}]
+  (response 200 {:score (fools/score-for-user user)}))
+
 (defroutes public-routes
            (route/resources "/")
            (POST "/register" [] auth/register-handler)
@@ -74,6 +78,8 @@
 (defroutes user-routes
            (POST "/logout" [] auth/logout-handler)
            (PUT "/profile" [] auth/update-profile-handler)
+
+           (GET "/fools/score" [] fools-my-score)
 
            (DELETE "/profile/stats/user" [] stats/clear-userstats-handler)
            (DELETE "/profile/stats/deck/:id" [] stats/clear-deckstats-handler)

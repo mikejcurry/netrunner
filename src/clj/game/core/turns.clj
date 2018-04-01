@@ -63,6 +63,7 @@
                  :sfx [] :sfx-current-id 0
                  :options {:spectatorhands spectatorhands}
                  :corp {:user (:user corp) :identity corp-identity
+                        :fools {:total (fools/score-for-user (:user corp))}
                         :options corp-options
                         :deck (zone :deck corp-deck)
                         :deck-id corp-deck-id
@@ -75,6 +76,7 @@
                         :agenda-point 0
                         :click-per-turn 3 :agenda-point-req 7 :keep false}
                  :runner {:user (:user runner) :identity runner-identity
+                          :fools {:total (fools/score-for-user (:user runner))}
                           :options runner-options
                           :deck (zone :deck runner-deck)
                           :deck-id runner-deck-id

@@ -13,7 +13,8 @@
             [netrunner.ws :as ws]
             [jinteki.utils :refer [str->int]]
             [jinteki.cards :refer [all-cards]]
-            [jinteki.fools :as fools]))
+            [jinteki.fools :as fools]
+            [netrunner.leaderboard :as leaderboard]))
 
 (defonce game-state (atom {}))
 (defonce last-state (atom {}))
@@ -102,9 +103,9 @@
   (reset! lock false))
 
 (defn handle-diff [diff]
-
   (swap! game-state #(differ/patch @last-state diff))
   (swap! last-state #(identity @game-state))
+  (put! leaderboard/score-channel (get-in @game-state [(:side @game-state) :fools :total]))
   (reset! lock false))
 
 

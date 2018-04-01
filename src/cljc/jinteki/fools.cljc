@@ -17,7 +17,7 @@
                               :nickname  "kitty meow"
                               :leader    "Mr. Bigglesworth"
                               :sounds    {:trash #{"cat-trash1" "cat-trash2"}
-                                          :play  #{"cat-play1"}
+                                          :play  #{"cat_play1" "cat-play1" "cat-play2"}
                                           :use   #{"cat-use1" "cat-use2"}}}
                    :snake    {:name      "Team Snake"
                               :cards     #{"Susanoo-no-Mikoto" "Cobra" "Viper" "Mamba" "Caduceus" "Wormhole" "Wraparound" "Tollbooth" "Uroboros" "Dracō"
@@ -34,8 +34,8 @@
                               :card-icon "🦎"
                               :nickname  "dinorawr"
                               :leader    "GOJIRA!!!!"
-                              :sounds    {:play  #{"lizard-play1" "lizard-play2" "lizard-play3" "lizard-play4" "lizard-play5"}
-                                          :use   #{"lizard-use1" "lizard-use2" "lizard-use3" "lizard-use4" "lizard-use5"}
+                              :sounds    {:play  #{"lizard-play1" "lizard-play2" "lizard-play3"}
+                                          :use   #{"lizard-use1" "lizard-use2" "lizard-use3"}
                                           :trash #{"lizard-trash1"}}}
                    :turtle   {:name      "Team Turtle"
                               :cards     #{"Turtlebacks" "Shell Corporation" "Bullfrog"
@@ -81,7 +81,7 @@
                               :nickname  "baby beluga"
                               :leader    "Call Me Ishmael"
                               :sounds    {:trash #{"whale-trash" "whale-trash2" "whale-trash3"}
-                                          :play  #{"whale-play1" "whale-play2" "whale-play3" "whale-play4" "whale-play5"}
+                                          :play  #{"whale-play1" "whale-play2"}
                                           :use   #{"whale-use1" "whale-use2" "whale-use4"}}}})
 
 
@@ -113,6 +113,7 @@
            (first %))
         animal-teams))
 
+
 (defn parse-name [s]
   #?(:clj  (reduce + (map int s))
      :cljs (reduce + (map #(.charCodeAt % 0) s))))
@@ -142,6 +143,11 @@
   ([team {:keys [username] :as user} amount]
    (swap! user-scores update-in [team username] (fnil inc 0))))
 
+
+(defn score-for-user [{username :username :as user}]
+  (let [team (animal-team user)]
+    (get-in @user-scores [team username] 0)))
+
 (defn get-score
   "Takes a team name as a symbol, and returns that team's score."
   [team]
@@ -165,13 +171,16 @@
       (when (= user-animal card-animal)
         ;; Record card usage by this player
         (swap! card-uses update-in [user-animal username] #(conj (or % #{}) title))
-        (increment-user-score user-animal user)))))
+        (increment-user-score user-animal user)
+        (swap! state assoc-in [side :fools :total] (score-for-user user))))))
 
 (defn score-misc [state side amount]
   (let [user (get-in @state [side :user])
         user-animal (animal-team user)]
     (when (two-player-game? state)
-      (increment-user-score user-animal user amount))))
+
+      (increment-user-score user-animal user amount)
+      (swap! state assoc-in [side :fools :total] (or (score-for-user user) 0)))))
 
 (defn high-score [team]
   (first (get @user-scores team)))
